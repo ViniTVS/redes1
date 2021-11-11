@@ -3,78 +3,98 @@
 #include <sys/socket.h>
 #include <bitset>
 #include <string.h>
+#include <chrono>
+#include <thread>
+#include "mensagem.h"
+#include "ls.h"
+
 extern "C" {
   #include "rawsockets.h" //a C header, so wrap it in extern "C" 
 }
 
 
-union CorpoMensagem {
-    struct { 
-        uint8_t paridade;
-        uint8_t tipo :4;
-        uint8_t sequencia :4;
-        uint8_t tamanho :4;
-        uint8_t origem :2;
-        uint8_t destino :2;
-        uint8_t marcador;
-    };
-    uint32_t binario;
-};
-// 
-// Como os dados da mensagem possuem valor variado, ficarão sempre armazenados em um array de char 
-union DadoMensagem{
-    uint8_t num;
-    char c;
-};
 
-int main(){
+void traduz(uint8_t *array_bruto, int tam_array){
+    CorpoMensagem corpo;
+    memcpy ( &corpo, array_bruto, 3);
+    // memcpy ( &corpo.paridade, array_bruto, 3);
+    // memcpy ( &corpo.marcador, &array_bruto[0], 1);
+    // memcpy ( &corpo.tipo, &array_bruto[1], 1);
+    // memcpy ( &corpo.paridade, &array_bruto[tam_array], 1);
+    std::cout << "corpo: " << std::bitset<32>(corpo.binario) << "\n";
+    std::cout << "marcador: " << std::bitset<8>(corpo.marcador) << "\n";
+    std::cout << "destino: " << std::bitset<2>(corpo.destino) << "\n";
+    std::cout << "origem: " << std::bitset<2>(corpo.origem) << "\n";
+    std::cout << "tamanho: " << unsigned(corpo.tamanho) << "\n";
+    std::cout << "sequencia: " << std::bitset<4>(corpo.sequencia) << "\n";
+    std::cout << "tipo: " << std::bitset<4>(corpo.tipo) << "\n";
+    std::cout << "paridade: " << std::bitset<8>(corpo.paridade) << "\n";
+    
+    std::cout << "Dados: \n";
+    for (int i = 0; i < unsigned(corpo.tamanho); i++){        
+        std::cout << "\t" << unsigned(array_bruto[3+i]) << "\n";
+    }
+    
+    std::cout << "Mensagem recebida: \n";
+    for (int i = 0; i < tam_array; i++){        
+        std::cout << "\t" << unsigned(array_bruto[i]) << "\n";
+    }
+    
+}
+
+int main(int argc, char *argv[]){
+    /*
     // std::string str;
-    // str = "lo";
+    // str = "lo";int
     CorpoMensagem msg;
-    // msg.binario = 0b011111100110001100011110;
-    uint64_t teste = 0b0111111001100100000111100011000001001000011101010000000010011100;
-    // std::cout << "teste: 0b" << std::bitset<64>(teste) << std::endl;
-    // // corpo da mensagem passa a ter os primeiros 24 bits da mensagem
-    // msg.binario = (teste >> (sizeof(teste)*8 - 24));
-    // msg.binario = (msg.binario << 8);
-    // // separo os 8 últimos bits da mensagem
-    // uint8_t aux = teste;
-    // // e os adiciono no corpo da mensagem
-    // msg.binario = (msg.binario | aux);
-    // std::cout << "binario: 0b" << std::bitset<32>(msg.binario) << std::endl << std::endl;
-
-    // std::cout << "Marcador: " << std::bitset<8>(msg.marcador) << std::endl;
-    // std::cout << "Destino: " << std::bitset<2>(msg.destino) << std::endl;
-    // std::cout << "Origem: " << std::bitset<2>(msg.origem) << std::endl;
-    // std::cout << "Tamanho: " << int( msg.tamanho) << std::endl;
-    // std::cout << "Sequência: " << std::bitset<4>(msg.sequencia) << std::endl;
-    // std::cout << "Tipo: " << std::bitset<4>(msg.tipo) << std::endl;
-    // std::cout << "Paridade: " << std::bitset<8>(msg.paridade) << std::endl;
-
-    // int tam = int( msg.tamanho);
-    // DadoMensagem array[tam];
-    // // copiar os dados da mensagem no campo 
-    // for (int i = tam - 1; i >= 0; i--){
-    //     teste = teste >> 8;
-    //     memcpy ( &array[i], &teste, sizeof(char) );
-    // }
-
-    // // mensagem: 00110000 01001000 01110101 0000000
-    // //                  0        H        u    NULL
-    // for (int i = 0; i < tam; i++){
-    //     std::cout << "int: " << std::bitset<8>(array[i].num) << "\tASCII: " << array[i].car << std::endl;
-    // }
+ 
     char tipo_conexao[3];
+    int tam_envio = 19;
+    uint8_t dadobruto[tam_envio];
+    int tam_recibo = 19;
+    uint8_t dado_recebido[tam_recibo];
 
+    dadobruto[0] = 0b00111110;
+    dadobruto[1] = 0b01101110;
+    dadobruto[2] = 0b00100100;
+    for (int i = 3; i < tam_envio; i++){
+        dadobruto[i] = i;
+    }
+
+
+    std::cout << "Mensagem: \n";
+    for (int i = 0; i < tam_envio; i++){        
+        std::cout << "\t" << unsigned(dadobruto[i]) << "\n";
+    }
+
+    std::cout << "Iniciando socket...\n";
     strcpy(tipo_conexao, "lo");
     int soquete = ConexaoRawSocket(tipo_conexao);
-    int nread = send(soquete, &teste, 19, 0);
-    std::cout << "bytes sent: " << nread << std::endl;
+    std::cout << "soquete: " << soquete << "\n";
+    
+    // if(argc == 1){
+        std::cout << "sending...\n";
+        int nread = send(soquete, &dadobruto, tam_envio, 0);
+        std::cout << "bytes enviados: " << nread << std::endl;
 
-    uint64_t recebe;
-    nread = recv(soquete, &recebe, 19, 0);
-    if (nread == -1)
-        return 1; 
-    std::cout << "recebe: 0b" << std::bitset<64>(recebe) << std::endl;
+    // } else {
+
+        uint64_t recebe;
+         nread = recv(soquete, &dado_recebido, tam_recibo, 0);
+        if (nread == -1)
+            exit(-1); 
+        std::cout << "bytes recebidos: " << nread << "\n";
+
+        traduz(dado_recebido, tam_recibo);
+    // }
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+    // for (int i = 0; i < tam_recibo; i++){
+    //     std::cout << "\t" << unsigned(dado_recebido[i]) << "\n";
+    // }
+    */
+    list();
+    // std::cout << << std::endl;
     return 0;
 }

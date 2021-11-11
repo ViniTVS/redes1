@@ -13,8 +13,8 @@ using namespace std;
 union CorpoMensagem {
     struct { 
         uint8_t paridade;
-        uint8_t tipo :4;
         uint8_t sequencia :4;
+        uint8_t tipo :4;
         uint8_t tamanho :4;
         uint8_t origem :2;
         uint8_t destino :2;
