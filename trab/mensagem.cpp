@@ -1,8 +1,9 @@
 #include <iostream>
 #include <bitset>
 #include <string.h>
+#include <vector>
 
-using namespace std;
+// using namespace std;
 
 // Estrutura do CorpoMensagem:
 // ┌────────────────────┬──────────┬──────────┬──────────────┬──────────────┬──────────────┬────────────────────┐
@@ -12,13 +13,13 @@ using namespace std;
 
 union CorpoMensagem {
     struct { 
-        uint8_t paridade;
-        uint8_t sequencia :4;
-        uint8_t tipo :4;
+        uint8_t marcador;
         uint8_t tamanho :4;
         uint8_t origem :2;
         uint8_t destino :2;
-        uint8_t marcador;
+        uint8_t tipo :4;
+        uint8_t sequencia :4;
+        uint8_t paridade;
     };
     uint32_t binario;
 };
@@ -29,59 +30,44 @@ union DadoMensagem{
     char c;
 };
 
-int main(){
-    CorpoMensagem msg;
-    // msg.binario = 0b011111100110001100011110;
-    uint64_t teste = 0b0111111001100100000111100011000001001000011101010000000010011100;
-    std::cout << "teste: 0b" << std::bitset<64>(teste) << std::endl;
-    // corpo da mensagem passa a ter os primeiros 24 bits da mensagem
-    msg.binario = (teste >> (sizeof(teste)*8 - 24));
-    msg.binario = (msg.binario << 8);
-    // separo os 8 últimos bits da mensagem
-    uint8_t aux = teste;
-    // e os adiciono no corpo da mensagem
-    msg.binario = (msg.binario | aux);
-    std::cout << "binario: 0b" << std::bitset<32>(msg.binario) << std::endl << std::endl;
+class Mensagem{
+    private:
+        uint8_t marcador;
+        CorpoMensagem corpo;
+        std::vector <DadoMensagem> dados;
+        uint8_t paridade;
 
-    std::cout << "Marcador: " << std::bitset<8>(msg.marcador) << std::endl;
-    std::cout << "Destino: " << std::bitset<2>(msg.destino) << std::endl;
-    std::cout << "Origem: " << std::bitset<2>(msg.origem) << std::endl;
-    std::cout << "Tamanho: " << int( msg.tamanho) << std::endl;
-    std::cout << "Sequência: " << std::bitset<4>(msg.sequencia) << std::endl;
-    std::cout << "Tipo: " << std::bitset<4>(msg.tipo) << std::endl;
-    std::cout << "Paridade: " << std::bitset<8>(msg.paridade) << std::endl;
+    public:
+        Mensagem(uint8_t *array_bruto);
+        // ~Mensagem();
+        void printMensagem();
+};
 
-    int tam = int( msg.tamanho);
-    DadoMensagem array[tam];
-    // copiar os dados da mensagem no campo 
-    for (int i = tam - 1; i >= 0; i--){
-        teste = teste >> 8;
-        memcpy( &array[i], &teste, sizeof(char) );
+Mensagem::Mensagem(uint8_t *array_bruto){
+    // Copia os primeiros 3 bytes da mensagem (que sempre serão usados)
+    memcpy ( &corpo.binario, array_bruto, 3);    
+    // copia os dados da mensagem
+    DadoMensagem aux;
+    int i = 0;
+    for ( ; i < unsigned(corpo.tamanho); i++){   
+        memcpy ( &aux, &array_bruto[i+3], 1); 
+        dados.push_back(aux);
     }
-
-    // mensagem: 00110000 01001000 01110101 0000000
-    //                  0        H        u    NULL
-    for (int i = 0; i < tam; i++){
-        std::cout << "int: " << std::bitset<8>(array[i].num) << "\tASCII: " << array[i].car << std::endl;
-    }
-
-    return 0;
+    // copia a paridade
+    memcpy ( &corpo.paridade, &array_bruto[3+unsigned(corpo.tamanho)], 1);
+    
 }
 
-// class Mensagem
-// {
-// private:
-//     /* data */
-//     CorpoMensagem msg;
-// public:
-//     Mensagem(/* args */);
-//     ~Mensagem();
-// };
-
-// Mensagem::Mensagem(/* args */)
-// {
-// }
-
-// Mensagem::~Mensagem()
-// {
-// }
+void Mensagem::printMensagem(){
+    std::cout << "Marcador: " << std::bitset<8>(corpo.marcador) << std::endl;
+    std::cout << "Destino: " << std::bitset<2>(corpo.destino) << std::endl;
+    std::cout << "Origem: " << std::bitset<2>(corpo.origem) << std::endl;
+    std::cout << "Tamanho: " << unsigned(corpo.tamanho) << std::endl;
+    std::cout << "Sequência: " << unsigned(corpo.sequencia) << std::endl;
+    std::cout << "Tipo: " << std::bitset<4>(corpo.tipo) << std::endl;
+    std::cout << "Paridade: " << std::bitset<8>(corpo.paridade) << std::endl;
+    std::cout << "Dados: " << std::endl;
+    for (int i = 0; i < dados.size(); i++)
+        std::cout << std::bitset<8>(dados[i].num) << " ";
+    std::cout << std::endl;
+}

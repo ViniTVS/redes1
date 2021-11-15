@@ -12,6 +12,7 @@
 #define LS
 
 std::string get_working_path();
-int list();
+std::string list();
+void criaMensagemLs(uint8_t sequencia, uint8_t *mensagem);
 
 #endif  

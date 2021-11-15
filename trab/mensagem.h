@@ -1,4 +1,8 @@
+#include <iostream>
 #include <bitset>
+#include <string.h>
+#include <vector>
+
 #ifndef MENSAGEM
 #define MENSAGEM
 
@@ -26,5 +30,40 @@ union DadoMensagem{
     uint8_t num;
     char c;
 };
+
+class Mensagem{
+    private:
+        CorpoMensagem corpo;
+        std::vector <DadoMensagem> dados;
+    public:
+        Mensagem(uint8_t *array_bruto);
+        // ~Mensagem();
+        void printMensagem();
+};
+
+// Mensagem::Mensagem(uint8_t *array_bruto, int tam_array){
+//     memcpy ( &corpo, array_bruto, 3);
+//     int i = 0;
+//     for ( ; i < unsigned(corpo.tamanho); i++){        
+//         dados.push_back(array_bruto[3+i]);
+//     }
+//     i++;
+//     memcpy ( &corpo.paridade, &array_bruto[3+i], 1);
+//     std::cout << "Mensagem recebida: \n";
+//     for (int i = 0; i < tam_array; i++){        
+//         std::cout << "\t" << unsigned(array_bruto[i]) << "\n";
+//     }
+// }
+
+// Mensagem::~Mensagem(){
+// }
+
+
+
+
+// void printMensagem(){
+
+// }
+
 
 #endif  
