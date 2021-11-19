@@ -11,8 +11,9 @@
 #ifndef LS
 #define LS
 
-std::string get_working_path();
+std::string getPath();
 std::string list();
-void criaMensagemLs(uint8_t sequencia, uint8_t *mensagem);
+int enviaLs(uint8_t sequencia);
+void criaPedidoLs(uint8_t sequencia, uint8_t *mensagem);
 
 #endif  

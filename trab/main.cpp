@@ -58,18 +58,18 @@ int main(int argc, char *argv[]){
     uint8_t mensagemBruta[20];
     uint8_t sequencia = 255;
     sequencia++;
-    criaMensagemLs(sequencia, mensagemBruta);
+    enviaLs(sequencia);
 
-    std::cout << "Mensagem: \n";
-    for (int i = 0; i < 20; i++){
-        std::cout << std::bitset<8>(mensagemBruta[i]);
-    }
-    std::cout << std::endl;
+    // std::cout << "Mensagem: \n";
+    // for (int i = 0; i < 20; i++){
+    //     std::cout << std::bitset<8>(mensagemBruta[i]);
+    // }
+    // std::cout << std::endl;
     
 
-    Mensagem teste(mensagemBruta);
+    // Mensagem teste(mensagemBruta);
 
-    teste.printMensagem();
+    // teste.printMensagem();
     // Mensagem
 
     // std::cout << list();
