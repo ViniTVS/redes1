@@ -13,7 +13,7 @@
 
 std::string getPath();
 std::string list();
-int enviaLs(uint8_t sequencia);
-void criaPedidoLs(uint8_t sequencia, uint8_t *mensagem);
+int enviaLs(uint8_t sequencia, int soquete);
+uint8_t criaPedidoLs(uint8_t sequencia, int soquete);
 
 #endif  

@@ -41,6 +41,9 @@ class Mensagem{
         Mensagem(uint8_t *array_bruto);
         // ~Mensagem();
         void printMensagem();
+        void printMensagemString();
+        uint8_t getTipo();
+        uint8_t getSequencia();
 };
 
 Mensagem::Mensagem(uint8_t *array_bruto){
@@ -71,3 +74,28 @@ void Mensagem::printMensagem(){
         std::cout << std::bitset<8>(dados[i].num) << " ";
     std::cout << std::endl;
 }
+
+void Mensagem::printMensagemString(){
+    std::cout << "Marcador: " << std::bitset<8>(corpo.marcador) << std::endl;
+    std::cout << "Destino: " << std::bitset<2>(corpo.destino) << std::endl;
+    std::cout << "Origem: " << std::bitset<2>(corpo.origem) << std::endl;
+    std::cout << "Tamanho: " << unsigned(corpo.tamanho) << std::endl;
+    std::cout << "Sequência: " << unsigned(corpo.sequencia) << std::endl;
+    std::cout << "Tipo: " << std::bitset<4>(corpo.tipo) << std::endl;
+    std::cout << "Paridade: " << std::bitset<8>(corpo.paridade) << std::endl;
+    std::cout << "Dados: " << std::endl;
+    for (int i = 0; i < dados.size(); i++)
+        std::cout << dados[i].c;
+    std::cout << std::endl;
+}
+
+uint8_t Mensagem::getTipo(){
+    return corpo.tipo;
+}
+uint8_t Mensagem::getSequencia(){
+    return corpo.sequencia;
+}
+
+// int Mensagem::enviaMensagem(){
+
+// }

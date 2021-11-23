@@ -39,6 +39,9 @@ class Mensagem{
         Mensagem(uint8_t *array_bruto);
         // ~Mensagem();
         void printMensagem();
+        void printMensagemString();
+        uint8_t getTipo();
+        uint8_t getSequencia();
 };
 
 // Mensagem::Mensagem(uint8_t *array_bruto, int tam_array){

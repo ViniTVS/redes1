@@ -12,8 +12,74 @@ extern "C" {
   #include "rawsockets.h" //a C header, so wrap it in extern "C" 
 }
 
+int clientMain(int soquete){
+    uint8_t sequencia = 255;
+    sequencia = criaPedidoLs(sequencia, soquete);
+    uint8_t mensagemBruta[20];
+    CorpoMensagem msg;
+    sequencia++;
+
+    return 0;
+}
+
+int serverMain(int soquete){
+    uint8_t dado_recebido[20];
+    int nread;
+    
+    while(true){
+
+        nread = recv(soquete, &dado_recebido, 20, 0);
+        // std::cout << nread << "\n";
+        if (nread == -1)
+            return(-1); 
+        else{
+            Mensagem mensagemRecebida(dado_recebido);
+            uint8_t sequencia = mensagemRecebida.getSequencia();
+
+            switch(mensagemRecebida.getTipo()) {
+                case 0x00: // cd
+                //     // code block
+                    break;
+                case 0x01: // ls
+                    enviaLs(sequencia, soquete);
+
+                //     // code block
+                    break;
+                case 0x02:
+                //     // code block
+                    break;
+                case 0x03:
+                //     // code block
+                    break;
+                case 0x04:
+                //     // code block
+                    break;
+                case 0x05:
+                //     // code block
+                    break;
+                // case 12:
+                //     // code block
+                //     break;
+                default:
+                    std::cout << std::bitset<8>(mensagemRecebida.getTipo());
+                    std::cout << " teste \n";
+                    // code block
+            }
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char *argv[]){
+
+    char tipo_conexao[] = "lo";
+    int soquete = ConexaoRawSocket(tipo_conexao);
+
+    if (argc > 1)
+        if( strcmp(argv[1], "-s") == 0 )
+            return serverMain(soquete);
+
+    return clientMain(soquete);
     /*
     // std::string str;
     // str = "lo";int
@@ -55,10 +121,6 @@ int main(int argc, char *argv[]){
     // }
     */
     // ;
-    uint8_t mensagemBruta[20];
-    uint8_t sequencia = 255;
-    sequencia++;
-    enviaLs(sequencia);
 
     // std::cout << "Mensagem: \n";
     // for (int i = 0; i < 20; i++){
@@ -73,5 +135,4 @@ int main(int argc, char *argv[]){
     // Mensagem
 
     // std::cout << list();
-    return 0;
 }
