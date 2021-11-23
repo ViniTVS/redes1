@@ -14,6 +14,12 @@ extern "C" {
 
 int clientMain(int soquete){
     uint8_t sequencia = 255;
+    Mensagem teste(0, 0b11, 0b10, 0b0111, sequencia, 0b01111010, NULL);
+    teste.printMensagem();
+    
+    if (teste.enviaMensagem(soquete) != 0)
+        std::cout << "enviado \n";
+    return 0; 
     sequencia = criaPedidoLs(sequencia, soquete);
     uint8_t mensagemBruta[20];
     CorpoMensagem msg;
@@ -61,8 +67,9 @@ int serverMain(int soquete){
                 //     // code block
                 //     break;
                 default:
-                    std::cout << std::bitset<8>(mensagemRecebida.getTipo());
-                    std::cout << " teste \n";
+                    // std::cout << std::bitset<8>(mensagemRecebida.getTipo());
+                    std::cout << " Mensagem recebida: \n";
+                    mensagemRecebida.printMensagem();
                     // code block
             }
         }

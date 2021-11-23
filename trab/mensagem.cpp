@@ -2,6 +2,7 @@
 #include <bitset>
 #include <string.h>
 #include <vector>
+#include <sys/socket.h>
 
 // using namespace std;
 
@@ -32,19 +33,38 @@ union DadoMensagem{
 
 class Mensagem{
     private:
-        uint8_t marcador;
         CorpoMensagem corpo;
         std::vector <DadoMensagem> dados;
         uint8_t paridade;
 
     public:
         Mensagem(uint8_t *array_bruto);
+        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t paridade_in, uint8_t *array_dados);
         // ~Mensagem();
         void printMensagem();
         void printMensagemString();
         uint8_t getTipo();
         uint8_t getSequencia();
+        int enviaMensagem(int soquete);
 };
+
+Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t paridade_in, uint8_t *array_dados){
+    // Copia os primeiros 3 bytes da mensagem (que sempre serão usados)
+    corpo.marcador = 0b01111110;
+    corpo.tamanho = tamanho_in;
+    corpo.origem = origem_in;
+    corpo.destino = destino_in;
+    corpo.tipo = tipo_in;
+    corpo.sequencia = sequencia_in;
+    corpo.paridade = paridade_in;
+
+    dados.clear();
+    DadoMensagem aux;
+    for (int i = 0; i < unsigned(corpo.tamanho); i++){
+        aux.num = array_dados[i];
+        dados.push_back(aux);
+    }
+}
 
 Mensagem::Mensagem(uint8_t *array_bruto){
     // Copia os primeiros 3 bytes da mensagem (que sempre serão usados)
@@ -94,6 +114,23 @@ uint8_t Mensagem::getTipo(){
 }
 uint8_t Mensagem::getSequencia(){
     return corpo.sequencia;
+}
+
+int Mensagem::enviaMensagem(int soquete){
+    uint8_t mensagem_bruta[20];
+    mensagem_bruta[0] = corpo.marcador;
+    mensagem_bruta[1] = (corpo.destino << 6) | (corpo.origem << 4) | (corpo.tamanho);
+    mensagem_bruta[2] = (corpo.sequencia << 4) | (corpo.tipo);
+    int tamanho_dados = 0;
+    for( ; tamanho_dados < unsigned(corpo.tamanho); tamanho_dados++){
+        mensagem_bruta[tamanho_dados + 3] = dados[tamanho_dados].num;
+    }
+    mensagem_bruta[3] = corpo.paridade;
+    for (int i = 4 ; i < 20; i++){
+        mensagem_bruta[i] = 0;
+    }
+
+    return send(soquete, &mensagem_bruta, 20, 0);
 }
 
 // int Mensagem::enviaMensagem(){
