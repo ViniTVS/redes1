@@ -3,6 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <sys/socket.h>
+#include <poll.h>
 
 #ifndef MENSAGEM
 #define MENSAGEM
@@ -33,18 +34,20 @@ union DadoMensagem{
 };
 
 class Mensagem{
-    private:
+    public:
         CorpoMensagem corpo;
         std::vector <DadoMensagem> dados;
+    
     public:
         Mensagem(uint8_t *array_bruto);
-        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t paridade_in, uint8_t *array_dados);
+        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados);
         // ~Mensagem();
         void printMensagem();
         void printMensagemString();
         uint8_t getTipo();
         uint8_t getSequencia();
         int enviaMensagem(int soquete);
+        Mensagem recebeResposta(int soquete);
 };
 
 // Mensagem::Mensagem(uint8_t *array_bruto, int tam_array){

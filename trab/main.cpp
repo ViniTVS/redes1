@@ -13,19 +13,53 @@ extern "C" {
 }
 
 int clientMain(int soquete){
-    uint8_t sequencia = 255;
-    Mensagem teste(0, 0b11, 0b10, 0b0111, sequencia, 0b01111010, NULL);
-    teste.printMensagem();
-    
-    if (teste.enviaMensagem(soquete) != 0)
-        std::cout << "enviado \n";
-    return 0; 
-    sequencia = criaPedidoLs(sequencia, soquete);
-    uint8_t mensagemBruta[20];
-    CorpoMensagem msg;
-    sequencia++;
+    uint8_t sequencia = 0;
+    while(true){
+        std::string entrada;
 
-    return 0;
+        // realizar a leitura da entrada de toda a linha em vez de string por string
+        std::getline(std::cin, entrada);
+        std::cout << "\033[2J\033[1;1H";
+        std::string comando = entrada.substr(0, entrada.find(" ")); // separa o comando
+
+        if (comando == "cd"){
+
+        }
+        else if (comando == "lcd"){
+            std::string nome_dir = entrada.substr(4, entrada.length());
+            trocaDir(nome_dir);
+        }
+        else if (comando == "ls"){
+            criaPedidoLs(sequencia, soquete);
+        }
+        else if (comando == "lls"){
+            std::cout << list();
+        }
+        else if (comando == "ver"){
+            std::string nome_arq = entrada.substr(4, entrada.length());
+            // std::cout << entrada << "\n";
+            std::cout << nome_arq << "\n";
+        }
+        else if (comando == "linha"){
+
+        }
+        else if (comando == "linhas"){
+
+        }
+        else if (comando == "edit"){
+
+        }
+        else if (comando == "compilar" || comando == "Compilar"){
+
+        }
+        else if (comando == "sair" || comando == "exit"){
+            return 0;
+        }
+        else { // nenhum comando conhecido
+            std::cout << "ERRO: Comando não reconhecido\n";
+        }
+        std::cout << "\n>";
+    }
 }
 
 int serverMain(int soquete){
@@ -41,13 +75,16 @@ int serverMain(int soquete){
         else{
             Mensagem mensagemRecebida(dado_recebido);
             uint8_t sequencia = mensagemRecebida.getSequencia();
-
+            if(mensagemRecebida.corpo.destino != 0b10)
+                continue;
+            else 
+                mensagemRecebida.printMensagem();
             switch(mensagemRecebida.getTipo()) {
                 case 0x00: // cd
                 //     // code block
                     break;
                 case 0x01: // ls
-                    enviaLs(sequencia, soquete);
+                    enviaRespostaLs(sequencia, soquete);
 
                 //     // code block
                     break;

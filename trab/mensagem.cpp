@@ -3,8 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <sys/socket.h>
-
-// using namespace std;
+#include <poll.h>
 
 // Estrutura do CorpoMensagem:
 // ┌────────────────────┬──────────┬──────────┬──────────────┬──────────────┬──────────────┬────────────────────┐
@@ -32,23 +31,23 @@ union DadoMensagem{
 };
 
 class Mensagem{
-    private:
+    public:
         CorpoMensagem corpo;
         std::vector <DadoMensagem> dados;
-        uint8_t paridade;
 
     public:
         Mensagem(uint8_t *array_bruto);
-        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t paridade_in, uint8_t *array_dados);
+        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados);
         // ~Mensagem();
         void printMensagem();
         void printMensagemString();
         uint8_t getTipo();
         uint8_t getSequencia();
         int enviaMensagem(int soquete);
+        Mensagem recebeResposta(int soquete);
 };
 
-Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t paridade_in, uint8_t *array_dados){
+Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados){
     // Copia os primeiros 3 bytes da mensagem (que sempre serão usados)
     corpo.marcador = 0b01111110;
     corpo.tamanho = tamanho_in;
@@ -56,7 +55,7 @@ Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, ui
     corpo.destino = destino_in;
     corpo.tipo = tipo_in;
     corpo.sequencia = sequencia_in;
-    corpo.paridade = paridade_in;
+    corpo.paridade = 0b10101010;
 
     dados.clear();
     DadoMensagem aux;
@@ -112,6 +111,7 @@ void Mensagem::printMensagemString(){
 uint8_t Mensagem::getTipo(){
     return corpo.tipo;
 }
+
 uint8_t Mensagem::getSequencia(){
     return corpo.sequencia;
 }
@@ -121,18 +121,47 @@ int Mensagem::enviaMensagem(int soquete){
     mensagem_bruta[0] = corpo.marcador;
     mensagem_bruta[1] = (corpo.destino << 6) | (corpo.origem << 4) | (corpo.tamanho);
     mensagem_bruta[2] = (corpo.sequencia << 4) | (corpo.tipo);
-    int tamanho_dados = 0;
-    for( ; tamanho_dados < unsigned(corpo.tamanho); tamanho_dados++){
-        mensagem_bruta[tamanho_dados + 3] = dados[tamanho_dados].num;
+    int i = 0;
+    for( ; i < corpo.tamanho; i++){
+        mensagem_bruta[i + 3] = dados[i].num;
     }
-    mensagem_bruta[3] = corpo.paridade;
-    for (int i = 4 ; i < 20; i++){
-        mensagem_bruta[i] = 0;
-    }
+    mensagem_bruta[i + 4] = corpo.paridade;
+    
 
     return send(soquete, &mensagem_bruta, 20, 0);
 }
 
+Mensagem Mensagem::recebeResposta(int soquete){
+    pollfd fd;
+    uint8_t buffer[20];
+    int ret;
+    fd.fd = soquete; 
+    fd.events = POLLIN;
+    int tentativas = 0;
+    // fazer 5 tentativas de timeout 
+    while(tentativas < 6){
+        ret = poll(&fd, 1, 5000); // 5s timeout
+        switch (ret) {
+            case -1: // erro
+                return NULL;
+                break;
+            case 0: // timeout 
+                tentativas++;
+                break;
+            default:
+                recv(soquete, &buffer, 20, 0);
+                Mensagem resposta(buffer);
+                // verifico se a resposta foi p/ esta máquina
+                if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
+                    return resposta;
+                else 
+                    tentativas++;
+                break;
+        }
+    }
+    Mensagem resposta_timeout(0, corpo.origem, corpo.origem, 0b1111, corpo.sequencia, NULL);
+    return resposta_timeout;
+}
 // int Mensagem::enviaMensagem(){
 
 // }
