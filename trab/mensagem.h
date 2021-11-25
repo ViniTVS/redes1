@@ -48,31 +48,8 @@ class Mensagem{
         uint8_t getSequencia();
         int enviaMensagem(int soquete);
         Mensagem recebeResposta(int soquete);
+        bool isEqual(Mensagem m1);
 };
-
-// Mensagem::Mensagem(uint8_t *array_bruto, int tam_array){
-//     memcpy ( &corpo, array_bruto, 3);
-//     int i = 0;
-//     for ( ; i < unsigned(corpo.tamanho); i++){        
-//         dados.push_back(array_bruto[3+i]);
-//     }
-//     i++;
-//     memcpy ( &corpo.paridade, &array_bruto[3+i], 1);
-//     std::cout << "Mensagem recebida: \n";
-//     for (int i = 0; i < tam_array; i++){        
-//         std::cout << "\t" << unsigned(array_bruto[i]) << "\n";
-//     }
-// }
-
-// Mensagem::~Mensagem(){
-// }
-
-
-
-
-// void printMensagem(){
-
-// }
 
 
 #endif  

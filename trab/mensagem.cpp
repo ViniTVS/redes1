@@ -45,6 +45,7 @@ class Mensagem{
         uint8_t getSequencia();
         int enviaMensagem(int soquete);
         Mensagem recebeResposta(int soquete);
+        bool isEqual(Mensagem m1);
 };
 
 Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados){
@@ -159,9 +160,17 @@ Mensagem Mensagem::recebeResposta(int soquete){
                 break;
         }
     }
-    Mensagem resposta_timeout(0, corpo.origem, corpo.origem, 0b1111, corpo.sequencia, NULL);
-    return resposta_timeout;
+    
+    return *this;
 }
 // int Mensagem::enviaMensagem(){
 
 // }
+
+bool Mensagem::isEqual(Mensagem m1){
+    for (int i = 0; i < dados.size(); i++){
+        if (dados[i].c != m1.dados[i].c)
+            return false;
+    }
+    return (m1.corpo.binario == corpo.binario);
+}

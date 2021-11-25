@@ -106,9 +106,16 @@ uint8_t criaPedidoLs(uint8_t sequencia, int soquete){
     if (pedidoLs.enviaMensagem(soquete) <= 0)
         exit(-1);
     Mensagem resposta = pedidoLs.recebeResposta(soquete);
-    if (resposta.corpo.tipo == 0b1111)
+    if (resposta.isEqual(pedidoLs)){
         std::cout << "oops! \n";
-        // exit(-1);
+        exit(-1);
+    }
+    else {
+        resposta.printMensagemString();
+        exit(-1);
+    }
+
+    if (resposta.corpo.tipo == 0b1111)
     
     resposta.printMensagemString();
 

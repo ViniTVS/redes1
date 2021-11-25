@@ -15,6 +15,8 @@ extern "C" {
 int clientMain(int soquete){
     uint8_t sequencia = 0;
     while(true){
+        std::cout << "\033[2J\033[1;1H";
+        std::cout << ">";
         std::string entrada;
 
         // realizar a leitura da entrada de toda a linha em vez de string por string
