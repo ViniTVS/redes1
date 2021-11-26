@@ -128,37 +128,45 @@ int Mensagem::enviaMensagem(int soquete){
     }
     mensagem_bruta[i + 4] = corpo.paridade;
     
-
-    return send(soquete, &mensagem_bruta, 20, 0);
+    int saida =send(soquete, &mensagem_bruta, 20, 0);
+    return saida;
 }
 
 Mensagem Mensagem::recebeResposta(int soquete){
-    pollfd fd;
-    uint8_t buffer[20];
-    int ret;
-    fd.fd = soquete; 
-    fd.events = POLLIN;
     int tentativas = 0;
-    // fazer 5 tentativas de timeout 
-    while(tentativas < 6){
-        ret = poll(&fd, 1, 5000); // 5s timeout
-        switch (ret) {
-            case -1: // erro
-                return NULL;
+    uint8_t buffer[20];
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 30000;
+    // fazer leitura das mensagens até encontrar a atual
+    int timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    if(timeout == 0){
+        recv(soquete, &buffer, 20, 0);
+        Mensagem resposta(buffer);
+        
+        while (!this->isEqual(resposta)){
+            timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+            if (timeout != 0){
                 break;
-            case 0: // timeout 
-                tentativas++;
-                break;
-            default:
-                recv(soquete, &buffer, 20, 0);
-                Mensagem resposta(buffer);
-                // verifico se a resposta foi p/ esta máquina
-                if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
-                    return resposta;
-                else 
-                    tentativas++;
-                break;
+            }
+
+            recv(soquete, &buffer, 20, 0);
+            Mensagem resposta(buffer);
+        // fazer 5 tentativas de timeout 
         }
+
+    }  
+    // ler a mensagem seguinte da atual em 5 tentativas
+    while(tentativas < 5){
+        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+        if(timeout == 0){
+            recv(soquete, &buffer, 20, 0);
+            Mensagem resposta(buffer);
+
+            if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
+                return resposta;
+        }
+        tentativas++;
     }
     
     return *this;
@@ -168,9 +176,13 @@ Mensagem Mensagem::recebeResposta(int soquete){
 // }
 
 bool Mensagem::isEqual(Mensagem m1){
+    if (m1.corpo.binario != corpo.binario)
+        return false;
+        
     for (int i = 0; i < dados.size(); i++){
         if (dados[i].c != m1.dados[i].c)
             return false;
     }
-    return (m1.corpo.binario == corpo.binario);
+
+    return true;
 }

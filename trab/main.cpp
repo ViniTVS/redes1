@@ -14,11 +14,10 @@ extern "C" {
 
 int clientMain(int soquete){
     uint8_t sequencia = 0;
+    std::cout << "\033[2J\033[1;1H";
+    std::cout << ">";
     while(true){
-        std::cout << "\033[2J\033[1;1H";
-        std::cout << ">";
         std::string entrada;
-
         // realizar a leitura da entrada de toda a linha em vez de string por string
         std::getline(std::cin, entrada);
         std::cout << "\033[2J\033[1;1H";
@@ -32,7 +31,16 @@ int clientMain(int soquete){
             trocaDir(nome_dir);
         }
         else if (comando == "ls"){
-            criaPedidoLs(sequencia, soquete);
+            int resposta = pedidoLs(sequencia, soquete);
+            // if (resposta != 1){
+            //     if (resposta == 0 )
+            //         std::cout << "Server timeout\n";
+            //     else
+            //         std::cout << "Erro no soquete\n";                    
+            // } else {
+            //     sequencia = recebeLs(soquete, ++sequencia);
+            // }
+            // std::cout << ">";
         }
         else if (comando == "lls"){
             std::cout << list();
@@ -71,46 +79,57 @@ int serverMain(int soquete){
     while(true){
 
         nread = recv(soquete, &dado_recebido, 20, 0);
+ 
+            
+        // nread = read(soquete, &dado_recebido, 20);
+        // nread = read(soquete, &dado_recebido, 20);
         // std::cout << nread << "\n";
-        if (nread == -1)
+        if (nread != 20)
             return(-1); 
+        
+        Mensagem mensagemRecebida(dado_recebido);
+        uint8_t sequencia = mensagemRecebida.getSequencia();
+        if(mensagemRecebida.corpo.destino != 0b10)
+            continue;
         else{
-            Mensagem mensagemRecebida(dado_recebido);
-            uint8_t sequencia = mensagemRecebida.getSequencia();
-            if(mensagemRecebida.corpo.destino != 0b10)
-                continue;
-            else 
-                mensagemRecebida.printMensagem();
-            switch(mensagemRecebida.getTipo()) {
-                case 0x00: // cd
-                //     // code block
-                    break;
-                case 0x01: // ls
-                    enviaRespostaLs(sequencia, soquete);
+            std::cout <<  "Mensagem sendo consumida:\n";
+            mensagemRecebida.printMensagemString();
+        }
+                
+        switch(mensagemRecebida.corpo.tipo) {
+            case 0x00: // cd
+            //     // code block
+                break;
+            case 0x01: // ls
+                int resposta = enviaRespostaLs(sequencia, soquete);
+                // sequencia++;
+                
 
-                //     // code block
-                    break;
-                case 0x02:
-                //     // code block
-                    break;
-                case 0x03:
-                //     // code block
-                    break;
-                case 0x04:
-                //     // code block
-                    break;
-                case 0x05:
-                //     // code block
-                    break;
-                // case 12:
-                //     // code block
-                //     break;
-                default:
-                    // std::cout << std::bitset<8>(mensagemRecebida.getTipo());
-                    std::cout << " Mensagem recebida: \n";
-                    mensagemRecebida.printMensagem();
-                    // code block
-            }
+            //     // code block
+                break;
+            // case 0x02:
+            // //     // code block
+            //     break;
+            // case 0x03:
+            // //     // code block
+            //     break;
+            // case 0x04:
+            // //     // code block
+            //     break;
+            // case 0x05:
+            // //     // code block
+            //     break;
+            // case 12:
+            //     // code block
+            //     break;
+            // default:
+            //     break;
+
+                // std::cout << std::bitset<8>(mensagemRecebida.getTipo());
+                // std::cout << " Mensagem recebida: \n";
+                // mensagemRecebida.printMensagem();
+                // code block
+            
         }
     }
     return 0;

@@ -36,53 +36,111 @@ int trocaDir(std::string nome_dir){
 
 int enviaRespostaLs(uint8_t sequencia, int soquete){
     uint8_t array_dados[15];
-    uint8_t dado_recebido[20];
     std::string itens = list();
     // std::cout << itens;
     int len = 0;
 
-    // envia as mensagens de 15 chars
+    // envia todas as mensagens de tamanho 15
     for(int i = 0; i < itens.length()/15; i++){
         
         for(int j = 0; j < 15; j++){
             array_dados[j] = itens[len];
             len++;
-        }
-        Mensagem mensagem(15, 0b10, 0b01, 0b1011, sequencia++, array_dados);
+        }  
+        // envia a mensagem com os dados
+        Mensagem mensagem(15, 0b10, 0b01, 0b1011, ++sequencia, array_dados);
+
+        std::cout << "Estou enviando:\n";
+        mensagem.printMensagemString();
         if (mensagem.enviaMensagem(soquete) <= 0)
             return -1;       
-        std::cout << "recebi uma resposta:\n"; 
+
+        // verifica timeout
         Mensagem resposta = mensagem.recebeResposta(soquete);
+        std::cout << "Resposta:\n";
         resposta.printMensagemString();
-        return 0;
+        if(resposta.isEqual(mensagem)){
+            // ! criar erro de timeout
+            return -1;     
+        }
+        // igonoro a resposta se não for uma das esperadas
+        while ((resposta.corpo.tipo != 0b1001 && resposta.corpo.tipo != 0b1000 && resposta.corpo.tipo != 0b1111) || resposta.corpo.sequencia != mensagem.corpo.sequencia){
+            resposta = mensagem.recebeResposta(soquete);
+            std::cout << "Nova resposta:\n";
+            resposta.printMensagemString();
+            if(resposta.isEqual(mensagem)){
+                // ! criar erro de timeout
+                return -1;     
+            }
+        }
+        // manda a mesma mensagem enquanto a resposta for NACK
+        while (resposta.corpo.tipo == 0b1001 && resposta.corpo.sequencia == mensagem.corpo.sequencia ){
+            Mensagem mensagem(15, 0b10, 0b01, 0b1011, sequencia, array_dados);
+            std::cout << "Estou enviando:\n";
+            mensagem.printMensagemString();
+            if (mensagem.enviaMensagem(soquete) <= 0)
+                return -1;          // give up
+                 
+            Mensagem resposta = mensagem.recebeResposta(soquete);
+            
+            std::cout << "recebi uma resposta:\n";
+            resposta.printMensagemString();
+            std::cout << "\n\n\n\n\n\n";
+            if(resposta.isEqual(mensagem))
+                return -1;          // give up
+        }
+        
+        // ACK!
+        // if(resposta.corpo.tipo == 0b1000){
+        //     sequencia++;
+        // }
+        // return 0;
         // Mensagem aux(dado_recebido);
         // aux.printMensagemString();
-        sequencia++;
     }
     // mensagens com menos de 15 chars
     if (len < itens.length()){
-
-        // mensagemBruta[0] = 0b01111110; // marcador inicio
-        // mensagemBruta[1] = 0b01100000 | (itens.length() - len); // destino 01(servidor), origem 10(cliente), tam  
-        // mensagemBruta[2] = 0b00001011 | (sequencia << 4);        
-        int i = 3;
-        for(; itens.length() - len > 0; i++){
-            // mensagemBruta[i] = itens[len];
+    
+        uint8_t restante = itens.length() - len;
+        for(int i = 0 ; itens.length() - len > 0; i++){
+            array_dados[i] = itens[len];
             len++;
+        }  
+
+        // envia a mensagem com os dados
+        Mensagem mensagem(restante, 0b10, 0b01, 0b1011, sequencia++, array_dados);
+        if (mensagem.enviaMensagem(soquete) <= 0)
+            return -1;       
+        std::cout << "recebi uma resposta:\n";
+
+        // verifica timeout
+        Mensagem resposta = mensagem.recebeResposta(soquete);
+        if(resposta.isEqual(mensagem)){
+            // ! criar erro de timeout
+            return -1;     
+        }
+        // manda a mesma mensagem enquanto a resposta for NACK
+        while (resposta.corpo.tipo == 0b1001 && resposta.corpo.sequencia == mensagem.corpo.sequencia){
+            Mensagem mensagem(15, 0b10, 0b01, 0b1011, sequencia, array_dados);
+            if (mensagem.enviaMensagem(soquete) <= 0)
+                return -1;          // give up
+                 
+            Mensagem resposta = mensagem.recebeResposta(soquete);
+            if(resposta.isEqual(mensagem))
+                return -1;          // give up
         }
         // mensagemBruta[i] = 0b10101010;
         // send(soquete, &mensagemBruta, 20, 0);
         // recv(soquete, &dado_recebido, 20, 0);
-        Mensagem aux(dado_recebido);
-        aux.printMensagemString();
-        sequencia++;
     }
 
+
+
+    Mensagem mensagem(0, 0b10, 0b01, 0b1011, sequencia++, NULL);
+    if (mensagem.enviaMensagem(soquete) <= 0)
+        return -1;       
+
     return sequencia;
-}
-
-void recebeRespostaLs(uint8_t sequencia, int soquete){
-
 }
 
 std::string list() {
@@ -94,35 +152,132 @@ std::string list() {
     return out;
 }
 
-uint8_t criaPedidoLs(uint8_t sequencia, int soquete){
-    uint8_t mensagemBruta[20];
-    mensagemBruta[0] = 0b01111110; // marcador inicio
-    mensagemBruta[1] = 0b10010000; // destino 10(servidor), origem 01(cliente), tam 0 
-    mensagemBruta[2] = 0b00000001 | (sequencia << 4);
-    mensagemBruta[3] = 0b00000000;
-    
-    Mensagem pedidoLs(mensagemBruta);
-    pedidoLs.printMensagemString();
-    if (pedidoLs.enviaMensagem(soquete) <= 0)
-        exit(-1);
-    Mensagem resposta = pedidoLs.recebeResposta(soquete);
-    if (resposta.isEqual(pedidoLs)){
-        std::cout << "oops! \n";
-        exit(-1);
+uint8_t recebeLs(int soquete, uint8_t sequencia){
+    uint8_t dado_recebido[20];
+    std::string saida_ls;
+    int recv = read(soquete, &dado_recebido, 20);
+    if (recv < 20){
+        return 0;
     }
-    else {
-        resposta.printMensagemString();
-        exit(-1);
-    }
+    Mensagem dados_ls(dado_recebido);
+    std::cout << "Respdfasfsaddxsadasosta:\tseq:" << unsigned(sequencia) << "\n";
+    dados_ls.printMensagemString();   
+    if (dados_ls.corpo.sequencia == sequencia){
+        for(int i = 0; i < dados_ls.corpo.tamanho; i++){
+            saida_ls += dados_ls.dados[i].c;
+        }
 
-    if (resposta.corpo.tipo == 0b1111)
+        std::cout << "Respdfasfsaddxsadasosta:\n";
+        dados_ls.printMensagemString();            
+        // respondo ACK
+        Mensagem msg(0, 0b01, 0b10, 0b1000,  sequencia, NULL); // cria mensagem de ACK
+        msg.enviaMensagem(soquete);
+        dados_ls = msg.recebeResposta(soquete);
+        sequencia++;
+    }
+    // enquanto recebe dados
+    while(dados_ls.corpo.tamanho != 0 && dados_ls.corpo.tipo == 0b1011){
+        
+        
+        // !! verifica paridade
+        // if (paridade)
+        if (dados_ls.corpo.sequencia == sequencia){
+            for(int i = 0; i < dados_ls.corpo.tamanho; i++){
+                saida_ls += dados_ls.dados[i].c;
+            }
+
+            std::cout << "Respdfasfsaddxsadasosta:\n";
+            dados_ls.printMensagemString();            
+            // respondo ACK
+            Mensagem msg(0, 0b01, 0b10, 0b1000,  sequencia, NULL); // cria mensagem de ACK
+            msg.enviaMensagem(soquete);
+            dados_ls = msg.recebeResposta(soquete);
+            sequencia++;
+            
+        }else { //ignoro a mensagem
+            continue;
+        }
+        // else
+        // Mensagem msg(0, 0b01, 0b10, 0b1111, resposta.corpo.sequencia, NULL); // cria mensagem de ACK
+
+
+        std::cout << "\n\n" << saida_ls << "\n\n";
+
+    }
+    return 0;
+    // std::string saida_ls;
+    // // exit (0);
+    // if(resposta.corpo.tipo != 0b1011){
+
+    //     return (-1);
+    // }
+    // for(int i = 0; i < unsigned(resposta.corpo.tamanho); i++){
+    //     saida_ls += resposta.dados[i].c;
+    // }
+
+
     
-    resposta.printMensagemString();
+
+    // else {
+    //     return (-1);
+    // }
+
+    std::cout << saida_ls << "\n";
 
     // int tentativas = 0;
     // while(tentativas < 5){
     //     // dadosLs();
     // }
 
-    return sequencia + 1;
+    return sequencia;
+}
+
+int pedidoLs(uint8_t sequencia, int soquete){
+    uint8_t seq = sequencia;
+    std::string saida_ls;
+    Mensagem msg_ls(0, 0b01, 0b10, 0b0001, seq, NULL);
+    
+    if (msg_ls.enviaMensagem(soquete) < 20)
+        return (-1);
+    Mensagem dados_ls = msg_ls.recebeResposta(soquete);
+    
+    // verifica se foi timeout
+    if (dados_ls.isEqual(msg_ls)){
+        std::cout << "Server timeout\n";
+        return (0);
+    }
+
+    seq++;
+    while(dados_ls.corpo.tamanho != 0 && dados_ls.corpo.tipo == 0b1011){
+        
+        std::cout << "dados:\n";
+        dados_ls.printMensagemString();
+        if (dados_ls.corpo.sequencia == seq){
+            for(int i = 0; i < dados_ls.corpo.tamanho; i++){
+                saida_ls += dados_ls.dados[i].c;
+            }
+            // respondo ACK
+            Mensagem resposta(0, 0b01, 0b10, 0b1000,  seq, NULL);
+            seq++;
+            resposta.enviaMensagem(soquete);
+            dados_ls = resposta.recebeResposta(soquete);
+            std::cout << "resposta:\n";
+            resposta.printMensagemString();
+        } else {
+            
+            // respondo NACK
+            Mensagem resposta(0, 0b01, 0b10, 0b1001,  seq, NULL);
+            resposta.enviaMensagem(soquete);
+            dados_ls = resposta.recebeResposta(soquete);
+            std::cout << "resposta:\n";
+            resposta.printMensagemString();
+        }
+        std::cout << saida_ls << "\n\n";
+    }
+    // Mensagem dados_ls = 
+
+
+
+
+    return 1;
 }
