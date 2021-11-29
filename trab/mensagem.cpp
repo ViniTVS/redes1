@@ -1,52 +1,4 @@
-#include <iostream>
-#include <bitset>
-#include <string.h>
-#include <vector>
-#include <sys/socket.h>
-#include <poll.h>
-
-// Estrutura do CorpoMensagem:
-// ┌────────────────────┬──────────┬──────────┬──────────────┬──────────────┬──────────────┬────────────────────┐
-// │      marcador      │  destino │  origem  │    tamanho   │  sequencia   │     tipo     │      paridade      │
-// │      (8 bits)      │ (2 bits) │ (2 bits) │   (4 bits)   │   (4 bits)   │   (4 bits)   │      (8 bits)      │  
-// └────────────────────┴──────────┴──────────┴──────────────┴──────────────┴──────────────┴────────────────────┘ 
-
-union CorpoMensagem {
-    struct { 
-        uint8_t marcador;
-        uint8_t tamanho :4;
-        uint8_t origem :2;
-        uint8_t destino :2;
-        uint8_t tipo :4;
-        uint8_t sequencia :4;
-        uint8_t paridade;
-    };
-    uint32_t binario;
-};
-// 
-// Como os dados da mensagem possuem valor variado, ficarão sempre armazenados em um array de char 
-union DadoMensagem{
-    uint8_t num;
-    char c;
-};
-
-class Mensagem{
-    public:
-        CorpoMensagem corpo;
-        std::vector <DadoMensagem> dados;
-
-    public:
-        Mensagem(uint8_t *array_bruto);
-        Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados);
-        // ~Mensagem();
-        void printMensagem();
-        void printMensagemString();
-        uint8_t getTipo();
-        uint8_t getSequencia();
-        int enviaMensagem(int soquete);
-        Mensagem recebeResposta(int soquete);
-        bool isEqual(Mensagem m1);
-};
+#include "mensagem.h"
 
 Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados){
     // Copia os primeiros 3 bytes da mensagem (que sempre serão usados)
@@ -136,10 +88,8 @@ Mensagem Mensagem::recebeResposta(int soquete){
     int tentativas = 0;
     uint8_t buffer[20];
     struct timeval tv;
-    tv.tv_sec = 3;
+    tv.tv_sec = 5;
     tv.tv_usec = 0;
-    // std::cout << "Mensagem agora\n";
-    // this->printMensagemString();
     
     // fazer leitura das mensagens até encontrar a atual
     int timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
@@ -148,28 +98,22 @@ Mensagem Mensagem::recebeResposta(int soquete){
     Mensagem resposta(buffer);
 
     while (timeout == 0 && !resposta.isEqual(*this)){
-        // std::cout << "Aaaaaaaaaaaaaaaaaaa\n";
-        // resposta.printMensagemString();
         recv(soquete, &buffer, 20, 0);
         Mensagem aux(buffer);
         resposta = aux;
         
         timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
     }  
-    // ler a mensagem seguinte da atual em 5 tentativas
+    // ler a mensagem seguinte da atual 
     timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-    // std::cout << "Achei\n";
     if (timeout == 0){
         recv(soquete, &buffer, 20, 0);
         Mensagem aux(buffer);
         resposta = aux;
         
     }
-    // resposta.printMensagemString();
-    // if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
-        return resposta;
+    return resposta;
     
-    return *this;
 }
 // int Mensagem::enviaMensagem(){
 

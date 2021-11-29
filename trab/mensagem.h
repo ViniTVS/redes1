@@ -8,6 +8,7 @@
 #ifndef MENSAGEM
 #define MENSAGEM
 
+
 // Estrutura do CorpoMensagem:
 // ┌────────────────────┬──────────┬──────────┬──────────────┬──────────────┬──────────────┬────────────────────┐
 // │      marcador      │  destino │  origem  │    tamanho   │  sequencia   │     tipo     │      paridade      │
@@ -37,7 +38,7 @@ class Mensagem{
     public:
         CorpoMensagem corpo;
         std::vector <DadoMensagem> dados;
-    
+
     public:
         Mensagem(uint8_t *array_bruto);
         Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados);

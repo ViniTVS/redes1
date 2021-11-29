@@ -6,10 +6,11 @@
 #include <chrono>
 #include <thread>
 #include "mensagem.h"
-#include "ls.h"
+#include "list.h"
+#include "directory.h"
 
 extern "C" {
-  #include "rawsockets.h" //a C header, so wrap it in extern "C" 
+  #include "rawsockets.h" 
 }
 
 int clientMain(int soquete){
@@ -31,16 +32,13 @@ int clientMain(int soquete){
             trocaDir(nome_dir);
         }
         else if (comando == "ls"){
-            int resposta = pedidoLs(sequencia, soquete);
-            // if (resposta != 1){
-            //     if (resposta == 0 )
-            //         std::cout << "Server timeout\n";
-            //     else
-            //         std::cout << "Erro no soquete\n";                    
-            // } else {
-            //     sequencia = recebeLs(soquete, ++sequencia);
-            // }
-            // std::cout << ">";
+            int resposta = pedidoLs(&sequencia, soquete);
+            if (resposta != 1){
+                if (resposta == 0 )
+                    std::cout << "Server timeout\n";
+                else
+                    std::cout << "Erro no soquete\n";                    
+            }
         }
         else if (comando == "lls"){
             std::cout << list();
@@ -75,37 +73,39 @@ int clientMain(int soquete){
 int serverMain(int soquete){
     uint8_t dado_recebido[20];
     int nread;
+    uint8_t sequencia = 0;
+    
+    struct timeval tv;
+    tv.tv_sec = 60*60;
+    tv.tv_usec = 0;
+    int timeout;
     
     while(true){
-
-        nread = recv(soquete, &dado_recebido, 20, 0);
- 
-            
-        // nread = read(soquete, &dado_recebido, 20);
-        // nread = read(soquete, &dado_recebido, 20);
-        // std::cout << nread << "\n";
-        if (nread != 20)
+        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+        if (timeout == 0)
+            nread = recv(soquete, &dado_recebido, 20, 0);
+        else
+            continue;
+        if (nread != 20){
             return(-1); 
+        }
         
         Mensagem mensagemRecebida(dado_recebido);
-        uint8_t sequencia = mensagemRecebida.getSequencia();
-        if(mensagemRecebida.corpo.destino != 0b10)
+        if(mensagemRecebida.corpo.destino != 0b10 || mensagemRecebida.corpo.sequencia != (sequencia & 0x0F)){
             continue;
-        else{
-            std::cout <<  "Mensagem sendo consumida:\n";
+        }else{
             mensagemRecebida.printMensagemString();
         }
-                
+        int resposta;
         switch(mensagemRecebida.corpo.tipo) {
             case 0x00: // cd
             //     // code block
                 break;
             case 0x01: // ls
-                int resposta = enviaRespostaLs(sequencia, soquete);
-                // sequencia++;
-                
-
-            //     // code block
+                resposta = enviaRespostaLs(&sequencia, soquete);
+                if (resposta == -1){
+                    std::cout << "ERRO! \n";
+                }
                 break;
             // case 0x02:
             // //     // code block
@@ -122,8 +122,9 @@ int serverMain(int soquete){
             // case 12:
             //     // code block
             //     break;
-            // default:
-            //     break;
+            default:
+                break;
+            //     continue;
 
                 // std::cout << std::bitset<8>(mensagemRecebida.getTipo());
                 // std::cout << " Mensagem recebida: \n";
@@ -145,59 +146,5 @@ int main(int argc, char *argv[]){
             return serverMain(soquete);
 
     return clientMain(soquete);
-    /*
-    // std::string str;
-    // str = "lo";int
-    CorpoMensagem msg;
- 
-    char tipo_conexao[3];
-
-
-    std::cout << "Mensagem: \n";
-    for (int i = 0; i < tam_envio; i++){        
-        std::cout << "\t" << unsigned(dadobruto[i]) << "\n";
-    }
-
-    std::cout << "Iniciando socket...\n";
-    strcpy(tipo_conexao, "lo");
-    int soquete = ConexaoRawSocket(tipo_conexao);
-    std::cout << "soquete: " << soquete << "\n";
     
-    // if(argc == 1){
-        std::cout << "sending...\n";
-        int nread = send(soquete, &dadobruto, tam_envio, 0);
-        std::cout << "bytes enviados: " << nread << std::endl;
-
-    // } else {
-
-        uint64_t recebe;
-         nread = recv(soquete, &dado_recebido, tam_recibo, 0);
-        if (nread == -1)
-            exit(-1); 
-        std::cout << "bytes recebidos: " << nread << "\n";
-
-        traduz(dado_recebido, tam_recibo);
-    // }
-
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
-    // for (int i = 0; i < tam_recibo; i++){
-    //     std::cout << "\t" << unsigned(dado_recebido[i]) << "\n";
-    // }
-    */
-    // ;
-
-    // std::cout << "Mensagem: \n";
-    // for (int i = 0; i < 20; i++){
-    //     std::cout << std::bitset<8>(mensagemBruta[i]);
-    // }
-    // std::cout << std::endl;
-    
-
-    // Mensagem teste(mensagemBruta);
-
-    // teste.printMensagem();
-    // Mensagem
-
-    // std::cout << list();
 }
