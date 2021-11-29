@@ -24,8 +24,6 @@ std::string list();
 
 int enviaRespostaLs(uint8_t sequencia, int soquete);
 
-uint8_t recebeLs(int soquete, uint8_t sequencia);
-
 int pedidoLs(uint8_t sequencia, int soquete);
 
 #endif  

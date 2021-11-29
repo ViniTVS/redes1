@@ -126,7 +126,7 @@ int Mensagem::enviaMensagem(int soquete){
     for( ; i < corpo.tamanho; i++){
         mensagem_bruta[i + 3] = dados[i].num;
     }
-    mensagem_bruta[i + 4] = corpo.paridade;
+    mensagem_bruta[i + 3] = corpo.paridade;
     
     int saida =send(soquete, &mensagem_bruta, 20, 0);
     return saida;
@@ -137,37 +137,37 @@ Mensagem Mensagem::recebeResposta(int soquete){
     uint8_t buffer[20];
     struct timeval tv;
     tv.tv_sec = 3;
-    tv.tv_usec = 30000;
+    tv.tv_usec = 0;
+    // std::cout << "Mensagem agora\n";
+    // this->printMensagemString();
+    
     // fazer leitura das mensagens até encontrar a atual
     int timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-    if(timeout == 0){
+    if (timeout == 0)
         recv(soquete, &buffer, 20, 0);
-        Mensagem resposta(buffer);
+    Mensagem resposta(buffer);
+
+    while (timeout == 0 && !resposta.isEqual(*this)){
+        // std::cout << "Aaaaaaaaaaaaaaaaaaa\n";
+        // resposta.printMensagemString();
+        recv(soquete, &buffer, 20, 0);
+        Mensagem aux(buffer);
+        resposta = aux;
         
-        while (!this->isEqual(resposta)){
-            timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-            if (timeout != 0){
-                break;
-            }
-
-            recv(soquete, &buffer, 20, 0);
-            Mensagem resposta(buffer);
-        // fazer 5 tentativas de timeout 
-        }
-
+        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
     }  
     // ler a mensagem seguinte da atual em 5 tentativas
-    while(tentativas < 5){
-        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-        if(timeout == 0){
-            recv(soquete, &buffer, 20, 0);
-            Mensagem resposta(buffer);
-
-            if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
-                return resposta;
-        }
-        tentativas++;
+    timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+    // std::cout << "Achei\n";
+    if (timeout == 0){
+        recv(soquete, &buffer, 20, 0);
+        Mensagem aux(buffer);
+        resposta = aux;
+        
     }
+    // resposta.printMensagemString();
+    // if (resposta.corpo.destino == corpo.origem && resposta.corpo.marcador == 0b01111110 /*&& resposta.verificaParidade()*/)
+        return resposta;
     
     return *this;
 }
