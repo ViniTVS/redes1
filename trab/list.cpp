@@ -11,7 +11,7 @@ std::string list() {
     return out;
 }
 
-int enviaRespostaLs(uint8_t* sequencia, int soquete){
+int respostaLs(uint8_t* sequencia, int soquete){
     
     uint8_t array_dados[15];
     std::string itens = list();
@@ -26,7 +26,7 @@ int enviaRespostaLs(uint8_t* sequencia, int soquete){
             len++;
         }  
         // envia a mensagem com os dados
-        *sequencia = *sequencia + 1;
+        *sequencia = ((*sequencia + 1) & 0x0F);
         Mensagem mensagem(j, 0b10, 0b01, 0b1011, *sequencia, array_dados);
 
         if (mensagem.enviaMensagem(soquete) <= 0)
@@ -94,10 +94,9 @@ int enviaRespostaLs(uint8_t* sequencia, int soquete){
 }
 
 int pedidoLs(uint8_t* sequencia, int soquete){
-    uint8_t seq = *sequencia;
     std::string saida_ls;
     
-    Mensagem msg_ls(0, 0b01, 0b10, 0b0001, seq, NULL); // pedido do comando
+    Mensagem msg_ls(0, 0b01, 0b10, 0b0001, *sequencia, NULL); // pedido do comando
     // falha no envio da mensagem
     if (msg_ls.enviaMensagem(soquete) < 20)
         return (-1);
@@ -108,27 +107,27 @@ int pedidoLs(uint8_t* sequencia, int soquete){
         return (0);
     }
 
-    seq++;
+    *sequencia = ((*sequencia + 1) & 0x0F);
     // enquanto tenho mensagem pra ler 
     while(dados_ls.corpo.tipo == 0b1011 && dados_ls.corpo.tamanho != 0){
         // verifico se a mensagem está na ordem esperada 
-        if (dados_ls.corpo.sequencia == (seq & 0x0F)){ // (lembrando que precisa manter seq em 4bits)
+        if (dados_ls.corpo.sequencia == *sequencia){ // (lembrando que precisa manter seq em 4bits)
             for(int i = 0; i < dados_ls.corpo.tamanho; i++){
                 saida_ls += dados_ls.dados[i].c;
             }
             // respondo ACK
             Mensagem resposta(0, 0b01, 0b10, 0b1000, dados_ls.corpo.sequencia, NULL);
-            seq++;
+            *sequencia = ((*sequencia + 1) & 0x0F);
             resposta.enviaMensagem(soquete);
             dados_ls = resposta.recebeResposta(soquete);
         } else {
             // respondo NACK
-            Mensagem resposta(0, 0b01, 0b10, 0b1001,  seq, NULL);
+            Mensagem resposta(0, 0b01, 0b10, 0b1001, *sequencia, NULL);
             resposta.enviaMensagem(soquete);
             dados_ls = resposta.recebeResposta(soquete);
         }
     }
     std::cout << saida_ls;
-    *sequencia = (seq & 0x0F);
+
     return 1;
 }

@@ -25,7 +25,8 @@ int clientMain(int soquete){
         std::string comando = entrada.substr(0, entrada.find(" ")); // separa o comando
 
         if (comando == "cd"){
-
+            std::string nome_dir = entrada.substr(3, entrada.length());
+            pedidoCd(&sequencia, soquete, nome_dir);
         }
         else if (comando == "lcd"){
             std::string nome_dir = entrada.substr(4, entrada.length());
@@ -76,7 +77,7 @@ int serverMain(int soquete){
     uint8_t sequencia = 0;
     
     struct timeval tv;
-    tv.tv_sec = 60*60;
+    tv.tv_sec = 60*1;
     tv.tv_usec = 0;
     int timeout;
     
@@ -99,10 +100,10 @@ int serverMain(int soquete){
         int resposta;
         switch(mensagemRecebida.corpo.tipo) {
             case 0x00: // cd
-            //     // code block
+                respostaCd(&sequencia, soquete, mensagemRecebida);
                 break;
             case 0x01: // ls
-                resposta = enviaRespostaLs(&sequencia, soquete);
+                resposta = respostaLs(&sequencia, soquete);
                 if (resposta == -1){
                     std::cout << "ERRO! \n";
                 }

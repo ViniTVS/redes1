@@ -1,16 +1,4 @@
 #include <filesystem>
-// #include <iostream>
-// #include <string>
-// #include <unistd.h>
-// #include <sys/param.h>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <sys/ioctl.h>
-// #include <net/ethernet.h>
-// #include <stdlib.h>
-// #include <stdio.h>
-// #include <limits.h>
-// #include <net/ethernet.h>
 #include "mensagem.h"
 
 #ifndef DIRECTORY
@@ -18,6 +6,10 @@
 namespace fs = std::filesystem;
 
 int trocaDir(std::string nome_dir);
+
+int pedidoCd(uint8_t *sequencia, int soquete, std::string nome_dir);
+
+int respostaCd(uint8_t* sequencia, int soquete, Mensagem msg_cd);
 
 
 #endif  
