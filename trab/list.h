@@ -4,7 +4,7 @@
 #ifndef LIST
 #define LIST
 
-std::string list();
+std::string ls();
 
 int respostaLs(uint8_t *sequencia, int soquete);
 

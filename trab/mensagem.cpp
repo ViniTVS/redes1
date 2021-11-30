@@ -8,14 +8,16 @@ Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, ui
     corpo.destino = destino_in;
     corpo.tipo = tipo_in;
     corpo.sequencia = sequencia_in;
-    corpo.paridade = 0b10101010;
+    uint8_t parity =  tamanho_in ^ sequencia_in ^ tipo_in ; 
 
     dados.clear();
     DadoMensagem aux;
     for (int i = 0; i < unsigned(corpo.tamanho); i++){
         aux.num = array_dados[i];
         dados.push_back(aux);
+        parity = parity ^ array_dados[i];
     }
+    corpo.paridade = parity % 2;
 }
 
 Mensagem::Mensagem(uint8_t *array_bruto){
@@ -61,14 +63,6 @@ void Mensagem::printMensagemString(){
     std::cout << std::endl;
 }
 
-uint8_t Mensagem::getTipo(){
-    return corpo.tipo;
-}
-
-uint8_t Mensagem::getSequencia(){
-    return corpo.sequencia;
-}
-
 int Mensagem::enviaMensagem(int soquete){
     uint8_t mensagem_bruta[20];
     mensagem_bruta[0] = corpo.marcador;
@@ -87,18 +81,24 @@ int Mensagem::enviaMensagem(int soquete){
 Mensagem Mensagem::recebeResposta(int soquete){
     int tentativas = 0;
     uint8_t buffer[20];
+    int tam_msg = 0;
     struct timeval tv;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     
     // fazer leitura das mensagens até encontrar a atual
     int timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-    if (timeout == 0)
-        recv(soquete, &buffer, 20, 0);
+    if (timeout == 0){
+        tam_msg = recv(soquete, &buffer, 20, 0);
+        if(tam_msg < 20)
+            return *this;
+    }
     Mensagem resposta(buffer);
 
     while (timeout == 0 && !resposta.isEqual(*this)){
-        recv(soquete, &buffer, 20, 0);
+        tam_msg = recv(soquete, &buffer, 20, 0);
+        if(tam_msg < 20)
+            return *this;
         Mensagem aux(buffer);
         resposta = aux;
         
@@ -107,7 +107,9 @@ Mensagem Mensagem::recebeResposta(int soquete){
     // ler a mensagem seguinte da atual 
     timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
     if (timeout == 0){
-        recv(soquete, &buffer, 20, 0);
+        tam_msg = recv(soquete, &buffer, 20, 0);
+        if(tam_msg < 20)
+            return *this;
         Mensagem aux(buffer);
         resposta = aux;
         
@@ -115,9 +117,6 @@ Mensagem Mensagem::recebeResposta(int soquete){
     return resposta;
     
 }
-// int Mensagem::enviaMensagem(){
-
-// }
 
 bool Mensagem::isEqual(Mensagem m1){
     if (m1.corpo.binario != corpo.binario)
@@ -129,4 +128,15 @@ bool Mensagem::isEqual(Mensagem m1){
     }
 
     return true;
+}
+
+bool Mensagem::verificaParidade(){
+    
+    uint8_t parity =  corpo.tamanho ^ corpo.sequencia ^ corpo.tipo ;
+    
+    for (int i = 0 ; i < unsigned(corpo.tamanho); i++){
+        parity = parity ^ dados[i].num;
+    }
+    parity = parity % 2;
+    return (parity == corpo.paridade);
 }

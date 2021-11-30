@@ -2,7 +2,7 @@
 #include "mensagem.h"
 #include "directory.h"
 
-std::string list() {
+std::string ls() {
     std::string path = fs::current_path();
     std::string out = "";
     for (const auto & entry : fs::directory_iterator(path)){
@@ -14,49 +14,39 @@ std::string list() {
 int respostaLs(uint8_t* sequencia, int soquete){
     
     uint8_t array_dados[15];
-    std::string itens = list();
+    std::string itens = ls();
     // std::cout << itens;
     int len = 0;
 
     // envia todas as mensagens de tamanho 15
     while( len < itens.length()){
-        int j = 0;
-        for(; j < itens.length() - len && j < 15; j++){
-            array_dados[j] = itens[len];
+        int tam_envio = 0;
+        for(; tam_envio < itens.length() - len && tam_envio < 15; tam_envio++){
+            array_dados[tam_envio] = itens[len];
             len++;
         }  
         // envia a mensagem com os dados
         *sequencia = ((*sequencia + 1) & 0x0F);
-        Mensagem mensagem(j, 0b10, 0b01, 0b1011, *sequencia, array_dados);
-
-        if (mensagem.enviaMensagem(soquete) <= 0)
+        Mensagem mensagem(tam_envio, 0b10, 0b01, 0b1011, *sequencia, array_dados);
+        if (mensagem.enviaMensagem(soquete) < 20)
             return -1;       
 
-        // verifica timeout
         Mensagem resposta = mensagem.recebeResposta(soquete);
-
+        // verifica timeout
         if(resposta.isEqual(mensagem)){
-            // ! criar erro de timeout
             return -1;     
         }
-        // igonoro a resposta se não for uma das esperadas
-        while ((resposta.corpo.tipo != 0b1001 && resposta.corpo.tipo != 0b1000 && resposta.corpo.tipo != 0b1111) || resposta.corpo.sequencia != mensagem.corpo.sequencia){
-            resposta = mensagem.recebeResposta(soquete);
-            
-            if(resposta.isEqual(mensagem)){
-                // ! criar erro de timeout
-                return -1;     
-            }
-        }
+        // busca uma resposta se não for uma das esperadas
+        
         // código de erro
         if (resposta.corpo.tipo == 0b1111){
-            return -1;
+            return 0;
         }
         // manda a mesma mensagem enquanto a resposta for NACK
-        while (resposta.corpo.tipo == 0b1001 && resposta.corpo.sequencia == mensagem.corpo.sequencia ){
-            Mensagem mensagem(j, 0b10, 0b01, 0b1011, *sequencia, array_dados);
+        while (resposta.corpo.tipo == 0b1001 && resposta.corpo.sequencia == mensagem.corpo.sequencia && mensagem.verificaParidade() ){
+            Mensagem mensagem(tam_envio, 0b10, 0b01, 0b1011, *sequencia, array_dados);
 
-            if (mensagem.enviaMensagem(soquete) <= 0)
+            if (mensagem.enviaMensagem(soquete) < 20)
                 return -1;          // give up
                  
             Mensagem resposta = mensagem.recebeResposta(soquete);
@@ -64,7 +54,7 @@ int respostaLs(uint8_t* sequencia, int soquete){
                 return -1;          // give up
         }
 
-        if (mensagem.corpo.tamanho == 0 && resposta.corpo.tipo == 0b1000){
+        if (mensagem.corpo.tamanho == 0 && resposta.corpo.tipo == 0b1000 && mensagem.verificaParidade()){
             return 1;
         }
     }
@@ -81,11 +71,11 @@ int respostaLs(uint8_t* sequencia, int soquete){
         }
         while (resposta.corpo.tipo == 0b1001){
             Mensagem mensagem(0, 0b10, 0b01, 0b1011, *sequencia, NULL);
-            if (mensagem.enviaMensagem(soquete) <= 0)
+            if (mensagem.enviaMensagem(soquete) < 20)
                 return -1;          // give up
                  
             Mensagem resposta = mensagem.recebeResposta(soquete);
-            if(resposta.isEqual(mensagem))
+            if(resposta.isEqual(mensagem) || !mensagem.verificaParidade())
                 return -1;          // give up
         }
     }
@@ -111,7 +101,7 @@ int pedidoLs(uint8_t* sequencia, int soquete){
     // enquanto tenho mensagem pra ler 
     while(dados_ls.corpo.tipo == 0b1011 && dados_ls.corpo.tamanho != 0){
         // verifico se a mensagem está na ordem esperada 
-        if (dados_ls.corpo.sequencia == *sequencia){ // (lembrando que precisa manter seq em 4bits)
+        if (dados_ls.corpo.sequencia == *sequencia && dados_ls.verificaParidade()){ // (lembrando que precisa manter seq em 4bits)
             for(int i = 0; i < dados_ls.corpo.tamanho; i++){
                 saida_ls += dados_ls.dados[i].c;
             }

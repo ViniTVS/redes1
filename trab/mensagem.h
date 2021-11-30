@@ -28,7 +28,7 @@ union CorpoMensagem {
     uint32_t binario;
 };
 // 
-// Como os dados da mensagem possuem valor variado, ficarão sempre armazenados em um array de char 
+// Como os dados da mensagem possuem valor variado, ficarão sempre armazenados em um vector de char/int de 8bits sem sinal 
 union DadoMensagem{
     uint8_t num;
     char c;
@@ -45,11 +45,10 @@ class Mensagem{
         // ~Mensagem();
         void printMensagem();
         void printMensagemString();
-        uint8_t getTipo();
-        uint8_t getSequencia();
         int enviaMensagem(int soquete);
         Mensagem recebeResposta(int soquete);
         bool isEqual(Mensagem m1);
+        bool verificaParidade();
 };
 
 
