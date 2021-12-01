@@ -17,7 +17,7 @@ Mensagem::Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, ui
         dados.push_back(aux);
         parity = parity ^ array_dados[i];
     }
-    corpo.paridade = parity % 2;
+    corpo.paridade = parity;
 }
 
 Mensagem::Mensagem(uint8_t *array_bruto){
@@ -85,24 +85,15 @@ Mensagem Mensagem::recebeResposta(int soquete){
     struct timeval tv;
     tv.tv_sec = 5;
     tv.tv_usec = 0;
-    
-    // fazer leitura das mensagens até encontrar a atual
-    int timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
-    if (timeout == 0){
-        tam_msg = recv(soquete, &buffer, 20, 0);
-        if(tam_msg < 20)
-            return *this;
-    }
+    int timeout = 0;
     Mensagem resposta(buffer);
-
-    while (timeout == 0 && !resposta.isEqual(*this)){
-        tam_msg = recv(soquete, &buffer, 20, 0);
+    for (; timeout == 0 && !resposta.isEqual(*this); ){
+        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+        if (timeout == 0)
+            tam_msg = recv(soquete, &buffer, 20, 0);
         if(tam_msg < 20)
             return *this;
-        Mensagem aux(buffer);
-        resposta = aux;
-        
-        timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+        resposta = Mensagem(buffer);
     }  
     // ler a mensagem seguinte da atual 
     timeout = setsockopt(soquete, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
@@ -137,6 +128,6 @@ bool Mensagem::verificaParidade(){
     for (int i = 0 ; i < unsigned(corpo.tamanho); i++){
         parity = parity ^ dados[i].num;
     }
-    parity = parity % 2;
+    
     return (parity == corpo.paridade);
 }

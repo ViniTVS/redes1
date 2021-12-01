@@ -92,10 +92,12 @@ int serverMain(int soquete){
         }
         
         Mensagem mensagemRecebida(dado_recebido);
-        if(mensagemRecebida.corpo.destino != 0b10 || mensagemRecebida.corpo.sequencia != (sequencia & 0x0F)){
+        if(
+            mensagemRecebida.corpo.destino != 0b10 
+            || mensagemRecebida.corpo.sequencia != (sequencia & 0x0F) 
+            || !mensagemRecebida.verificaParidade()
+        ){
             continue;
-        }else{
-            mensagemRecebida.printMensagemString();
         }
         int resposta;
         switch(mensagemRecebida.corpo.tipo) {
