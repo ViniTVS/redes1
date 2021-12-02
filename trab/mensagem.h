@@ -81,9 +81,49 @@ class Mensagem{
 
     void printMensagem();
     void printMensagemString();
+    /**
+     * @brief Envia a mensagem utilizando a função send da socket.h via <soquete>.
+     * O método adapta o objeto do tipo Mensagem para um array de 20 inteiros de 8 bits sem sinal. Os Bytes iniciais sendo
+     * transmitidos possuem os dados em si, respeitando o padrão do protocolo especificado pelo trabalho (podendo 
+     * variar entre 4 e 19 Bytes, dependendo do tamanho do campo de dados da Mensagem), enquanto o restante possue 
+     * valores não iniciados. 
+     * 
+     * @param soquete O valor do soquete para enviar a mensagem.
+     * 
+     * @return int Retorna o número de bytes enviados via soquete.
+     */
     int enviaMensagem(int soquete);
+
+    /**
+     * @brief Recebe a mensagem utilizando a função recv da socket.h via <soquete>.
+     * O método faz a leitura dos dados presentes no soquete até encontrar a Mensagem utilizada para a chamada
+     * do método. Após isso é verificada a existência de uma Mensagem seguinte disponível para leitura com um timeout
+     * de 3 segundos. Caso exista uma nova mensagem, esta será enviada. Caso contrário, será enviada a mensagem utilizada
+     * na chamada deste método. 
+     * 
+     * @param soquete O valor do soquete para se fazer leitura de dados.
+     * 
+     * @return Mensagem 
+     * Caso exista, uma nova Mensagem, seguinte da atual.
+     * Caso contrário, a Mensagem utilizada para a chamada deste método.
+     */
     Mensagem recebeResposta(int soquete);
-    bool isEqual(Mensagem m1);
+
+    /**
+     * @brief Verifica se a Mensagem utilizada para a chamada do método possui as mesmas informações da Mensagem <m>.
+     * 
+     * @param m Mensagem para se comparar.
+     * @return true Caso possuam as mesmas informações.
+     * @return false Caso não possuam as mesmas informações.
+     */
+    bool isEqual(Mensagem m);
+
+    /**
+     * @brief Verifica se a Mensagem possui seu campo de paridade conforme esperado.
+     * 
+     * @return true Caso seu campo de paridade esteja ìntegro.
+     * @return false Caso contrário.
+     */
     bool verificaParidade();
 };
 

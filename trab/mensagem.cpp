@@ -74,7 +74,7 @@ int Mensagem::enviaMensagem(int soquete){
     }
     mensagem_bruta[i + 3] = corpo.paridade;
     
-    int saida =send(soquete, &mensagem_bruta, 20, 0);
+    int saida = send(soquete, &mensagem_bruta, 20, 0);
     return saida;
 }
 
@@ -109,12 +109,12 @@ Mensagem Mensagem::recebeResposta(int soquete){
     
 }
 
-bool Mensagem::isEqual(Mensagem m1){
-    if (m1.corpo.binario != corpo.binario)
+bool Mensagem::isEqual(Mensagem m){
+    if (m.corpo.binario != corpo.binario)
         return false;
         
     for (int i = 0; i < dados.size(); i++){
-        if (dados[i].c != m1.dados[i].c)
+        if (dados[i].c != m.dados[i].c)
             return false;
     }
 
