@@ -8,7 +8,7 @@
 #include "mensagem.h"
 #include "list.h"
 #include "directory.h"
-#include "arquivo.h"
+#include "ver.h"
 
 extern "C" {
   #include "rawsockets.h" 
@@ -52,7 +52,13 @@ int clientMain(int soquete){
             std::cout << nome_arq << "\n";
         }
         else if (comando == "linha"){
+            std::string resto_entrada = entrada.substr(6, entrada.length());
+            uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
 
+            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+            std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
+
+            pedidoLinha(&sequencia, soquete, linha, nome_arq);
         }
         else if (comando == "linhas"){
 
@@ -100,7 +106,7 @@ int serverMain(int soquete){
         ){
             continue;
         }
-        if (msg_cd)
+        // if (msg_cd)
         int resposta;
         switch(mensagemRecebida.corpo.tipo) {
             case 0x00: // cd
@@ -115,9 +121,9 @@ int serverMain(int soquete){
             case 0x02: // ver
                 respostaVer(&sequencia, soquete, mensagemRecebida);
                 break;
-            // case 0x03:
-            // //     // code block
-            //     break;
+            case 0x03: // linha
+                respostaLinha(&sequencia, soquete, mensagemRecebida);
+                break;
             // case 0x04:
             // //     // code block
             //     break;
