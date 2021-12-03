@@ -38,7 +38,6 @@ int pedidoCd(uint8_t *sequencia, int soquete, std::string nome_dir){
     Mensagem resposta = msg_cd.recebeResposta(soquete);
     // verifica se foi timeout
     if (resposta.isEqual(msg_cd)){
-        std::cout << "Server timeout\n";
         return -1;
     }
     // tento enviar a mensagem novamente se for NACK
@@ -65,9 +64,8 @@ int pedidoCd(uint8_t *sequencia, int soquete, std::string nome_dir){
 int respostaCd(uint8_t* sequencia, int soquete, Mensagem msg_cd){    
     std::string path = "";
 
-    for (int i = 0; i < msg_cd.corpo.tamanho; i++){
+    for (int i = 0; i < msg_cd.corpo.tamanho; i++)
         path += msg_cd.dados[i].c;
-    }
 
     int saida = trocaDir(path);
     if (saida == -1) {

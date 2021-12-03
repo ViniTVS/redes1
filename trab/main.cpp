@@ -8,6 +8,7 @@
 #include "mensagem.h"
 #include "list.h"
 #include "directory.h"
+#include "arquivo.h"
 
 extern "C" {
   #include "rawsockets.h" 
@@ -47,6 +48,7 @@ int clientMain(int soquete){
         else if (comando == "ver"){
             std::string nome_arq = entrada.substr(4, entrada.length());
             // std::cout << entrada << "\n";
+            pedidoVer(&sequencia, soquete, nome_arq);
             std::cout << nome_arq << "\n";
         }
         else if (comando == "linha"){
@@ -94,11 +96,11 @@ int serverMain(int soquete){
         Mensagem mensagemRecebida(dado_recebido);
         if(
             mensagemRecebida.corpo.destino != 0b10 
-            || mensagemRecebida.corpo.sequencia != (sequencia & 0x0F) 
-            || !mensagemRecebida.verificaParidade()
+            || mensagemRecebida.corpo.sequencia != sequencia 
         ){
             continue;
         }
+        if (msg_cd)
         int resposta;
         switch(mensagemRecebida.corpo.tipo) {
             case 0x00: // cd
@@ -110,9 +112,9 @@ int serverMain(int soquete){
                     std::cout << "ERRO! \n";
                 }
                 break;
-            // case 0x02:
-            // //     // code block
-            //     break;
+            case 0x02: // ver
+                respostaVer(&sequencia, soquete, mensagemRecebida);
+                break;
             // case 0x03:
             // //     // code block
             //     break;
