@@ -45,7 +45,7 @@ void Mensagem::printMensagem(){
     std::cout << "Paridade: " << std::bitset<8>(corpo.paridade) << std::endl;
     std::cout << "Dados: " << std::endl;
     for (int i = 0; i < dados.size(); i++)
-        std::cout << unsigned(dados[i].c) << " ";
+        std::cout << unsigned(dados[i].num) << " ";
     std::cout << std::endl;
 }
 
