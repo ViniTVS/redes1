@@ -1,7 +1,7 @@
-editor: rawsockets.o main.o list.o mensagem.o directory.o error.o ver.o
-	g++ -o editor main.o rawsockets.o list.o mensagem.o directory.o error.o ver.o
+editor: rawsockets.o main.o list.o mensagem.o directory.o error.o ver.o linha.o
+	g++ -o editor main.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o
 
-main.o: main.cpp
+main.o: main.cpp rawsockets.o
 	g++ -c -o main.o main.cpp
 
 mensagem.o: mensagem.cpp mensagem.h
@@ -18,6 +18,9 @@ directory.o: directory.cpp directory.h
 
 ver.o: ver.cpp ver.h
 	g++ -c -o ver.o ver.cpp
+
+linha.o: linha.cpp linha.h
+	g++ -c -o linha.o linha.cpp
 
 rawsockets.o: rawsockets.c rawsockets.h
 	gcc -c -o rawsockets.o rawsockets.c

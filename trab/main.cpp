@@ -49,7 +49,6 @@ int clientMain(int soquete){
             std::string nome_arq = entrada.substr(4, entrada.length());
             // std::cout << entrada << "\n";
             pedidoVer(&sequencia, soquete, nome_arq);
-            std::cout << nome_arq << "\n";
         }
         else if (comando == "linha"){
             std::string resto_entrada = entrada.substr(6, entrada.length());

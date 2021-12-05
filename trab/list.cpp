@@ -14,7 +14,6 @@ std::string ls() {
 int respostaLs(uint8_t* sequencia, int soquete){    
     uint8_t array_dados[15];
     std::string itens = ls();
-    // std::cout << itens;
     int len = 0;
 
     // envia todas as mensagens de texto
