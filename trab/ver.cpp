@@ -3,7 +3,7 @@
 
 int respostaVer(uint8_t* sequencia, int soquete, Mensagem msg_linha){    
     std::string nome_arquivo = "";
-
+    // *-------------------- leio o nome do arquivo ----------------------------
     for (int i = 0; i < msg_linha.corpo.tamanho; i++)
         nome_arquivo += msg_linha.dados[i].c;
     // if (nome_arquivo.find(".c") != std::string::npos) {
@@ -30,11 +30,10 @@ int respostaVer(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         linha++;
     }
     arquivo.close();
-    // else
-    // return 0;
+    
+    // *-------------------- envio o conteúdo do arquivo ----------------------------
     int len = 0;
     uint8_t array_dados[20];
-    // envio o conteúdo do arquivo
     while( len < conteudo_arquivo.length()){
         int tam_envio = 0;
         for(; tam_envio < conteudo_arquivo.length() - len && tam_envio < 15; tam_envio++){
@@ -70,9 +69,10 @@ int respostaVer(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         }
     }
 
-    // final de envio
+    // *--------------------------- final de envio ----------------------------
+    
     *sequencia = ((*sequencia + 1) & 0x0F);
-    Mensagem mensagem(0, 0b10, 0b01, 0b1100, *sequencia, NULL);
+    Mensagem mensagem(0, 0b10, 0b01, 0b1101, *sequencia, NULL);
     if (mensagem.enviaMensagem(soquete) < 20)
         return -1;   
     Mensagem resposta = mensagem.recebeResposta(soquete);
@@ -153,7 +153,10 @@ int pedidoVer(uint8_t* sequencia, int soquete, std::string nome_arquivo){
                 dados_linha = resposta.recebeResposta(soquete);
         }
     }
-    std::cout << saida_linha;
+    if (dados_linha.corpo.tipo == 0b1101 && dados_linha.verificaParidade())
+        std::cout << saida_linha;
+    else
+        return -1;
 
     return 1;
 }

@@ -9,6 +9,7 @@
 #include "list.h"
 #include "directory.h"
 #include "ver.h"
+#include "edit.h"
 
 extern "C" {
   #include "rawsockets.h" 
@@ -63,6 +64,18 @@ int clientMain(int soquete){
 
         }
         else if (comando == "edit"){
+            std::string resto_entrada = entrada.substr(5, entrada.length());
+            uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+
+            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+            std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
+
+            resto_entrada = resto_entrada.substr(resto_entrada.find("\"") + 1, resto_entrada.length());
+            std::string novo_texto = resto_entrada.substr(0, resto_entrada.find("\""));
+
+            std::cout << "linha: " << unsigned(linha) << "\narq: " << nome_arq << "\ntexto: " << novo_texto << "\n";
+            pedidoEdit(&sequencia, soquete, linha, nome_arq, novo_texto);
+            // pedidoLinha(&sequencia, soquete, linha, nome_arq);
 
         }
         else if (comando == "compilar" || comando == "Compilar"){
@@ -126,9 +139,11 @@ int serverMain(int soquete){
             // case 0x04:
             // //     // code block
             //     break;
-            // case 0x05:
+            case 0x05:
+                respostaEdit(&sequencia, soquete, mensagemRecebida);
+
             // //     // code block
-            //     break;
+                break;
             // case 12:
             //     // code block
             //     break;

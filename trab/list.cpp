@@ -53,7 +53,7 @@ int respostaLs(uint8_t* sequencia, int soquete){
 
     *sequencia = ((*sequencia + 1) & 0x0F);
     // final de envio
-    Mensagem mensagem(0, 0b10, 0b01, 0b1011, *sequencia, NULL);
+    Mensagem mensagem(0, 0b10, 0b01, 0b1101, *sequencia, NULL);
     if (mensagem.enviaMensagem(soquete) < 20)
         return -1;   
     Mensagem resposta = mensagem.recebeResposta(soquete);
@@ -121,7 +121,10 @@ int pedidoLs(uint8_t* sequencia, int soquete){
                 dados_ls = resposta.recebeResposta(soquete);
         }
     }
-    std::cout << saida_ls;
+    if (dados_ls.corpo.tipo == 0b1101 && dados_ls.verificaParidade())
+        std::cout << saida_ls;
+    else
+        return -1;
 
     return 1;
 }

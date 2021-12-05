@@ -72,6 +72,7 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
     
     std::string saida_linha = "";
     *sequencia = ((*sequencia + 1) & 0x0F);
+
     // *------------------------- leitura da linha do arquivo --------------------------------- 
     while(dados_linha_num.corpo.tipo == 0b1100 && dados_linha_num.corpo.tamanho != 0){
         // verifico se a mensagem está na ordem esperada e sua paridade
@@ -94,7 +95,10 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
                 dados_linha_num = resposta.recebeResposta(soquete);
         }
     }
-    std::cout << saida_linha;
+    if (dados_linha_num.corpo.tipo == 0b1101 && dados_linha_num.verificaParidade())
+        std::cout << saida_linha;
+    else   
+        return -1;
 
     return 1;
 }
@@ -184,7 +188,7 @@ int respostaLinha(uint8_t* sequencia, int soquete, Mensagem msg_linha){
 
     // final de envio
     *sequencia = ((*sequencia + 1) & 0x0F);
-    Mensagem mensagem(0, 0b10, 0b01, 0b1100, *sequencia, NULL);
+    Mensagem mensagem(0, 0b10, 0b01, 0b1101, *sequencia, NULL);
     if (mensagem.enviaMensagem(soquete) < 20)
         return -1;   
     Mensagem resposta = mensagem.recebeResposta(soquete);
