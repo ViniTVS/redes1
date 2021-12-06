@@ -43,7 +43,7 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
 
     array_dados[0] = linha;
     Mensagem msg_linha_num(1, 0b01, 0b10, 0b1010, *sequencia, array_dados); // envio do número da linha
-        msg_linha_num.printMensagemString();
+
     if (msg_linha_num.enviaMensagem(soquete) < 20)
         return -1; //give up
     
@@ -83,7 +83,6 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
         }  
         // envia a mensagem com os dados
         Mensagem mensagem(tam_envio, 0b10, 0b01, 0b1100, *sequencia, array_dados);
-        mensagem.printMensagemString();
         if (mensagem.enviaMensagem(soquete) < 20)
             return -1;       
 
@@ -115,6 +114,7 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
     Mensagem resposta = mensagem.recebeResposta(soquete);
     if (resposta.corpo.sequencia == mensagem.corpo.sequencia && resposta.verificaParidade()){
         if (resposta.corpo.tipo == 0b1000){
+            *sequencia = ((*sequencia + 1) & 0x0F);
             return 1;
         }
         while (resposta.corpo.tipo == 0b1001 && resposta.verificaParidade()){
@@ -139,8 +139,7 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
     for (int i = 0; i < msg_linha.corpo.tamanho; i++)
         nome_arquivo += msg_linha.dados[i].c;
         
-    std::fstream arquivo; 
-    std::string novo_texto;
+    std::fstream arquivo;
     arquivo.open(nome_arquivo, std::ios::in); 
     // falha ao abrir o arquivo:
     if (arquivo.fail()){
@@ -157,7 +156,6 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
 
     // *---------------------------- leio o número da linha --------------------------------- 
     Mensagem mensagem_linha = resposta_ACK.recebeResposta(soquete);
-    mensagem_linha.printMensagem();
     while (!mensagem_linha.verificaParidade()){
         Mensagem nack(0, 0b01, 0b10, 0b1001, *sequencia, NULL); // NACK
         mensagem_linha = nack.recebeResposta(soquete);
@@ -165,8 +163,10 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
     if (mensagem_linha.isEqual(resposta_ACK))
         return -1;
     uint8_t linha = mensagem_linha.dados[0].num;
-    for (int i = 0; i < linha ; i++){
-        if (arquivo.eof()){
+    std::string conteudo_arquivo;
+    std::string linha_troca;
+    for (int i = 0; i <  unsigned(linha) ; i++){
+        if (arquivo.eof()){            
             arquivo.close();
             uint8_t array_dados[] = {4};
             Mensagem erro_linha(1, 0b10, 0b01, 0b1111, *sequencia, array_dados); // erro 4
@@ -176,35 +176,34 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
             }
             return -1; // erro no envio
         }
-        std::getline (arquivo, novo_texto);
+        std::getline (arquivo, linha_troca);
+        conteudo_arquivo = conteudo_arquivo + linha_troca + "\n";
     }
     Mensagem ack(0, 0b01, 0b10, 0b1000, *sequencia, NULL); // ACK
-    ack.enviaMensagem(soquete);
-    ack.printMensagem();
-    novo_texto += "\n";
+    if (ack.enviaMensagem(soquete) != 20)
+        return -1;
+
+    // novo_texto += "\n";
     Mensagem dado_nova_linha = ack.recebeResposta(soquete);
     *sequencia = ((*sequencia + 1) & 0x0F);
-    std::cout << unsigned(*sequencia);
     if (mensagem_linha.isEqual(resposta_ACK))
         return -1;
     // *------------------------- leitura da nova linha do arquivo --------------------------------- 
+    std::string novo_texto;
     while(dado_nova_linha.corpo.tipo == 0b1100 && dado_nova_linha.corpo.tamanho != 0){
         // verifico se a mensagem está na ordem esperada e sua paridade
-        std::cout << "\n\n\trecebido:\n";
-        dado_nova_linha.printMensagemString();
         if (dado_nova_linha.corpo.sequencia == *sequencia && dado_nova_linha.verificaParidade()){ 
             for(int i = 0; i < dado_nova_linha.corpo.tamanho; i++){
-                novo_texto += dado_nova_linha.dados[i].c;
+                novo_texto = novo_texto + dado_nova_linha.dados[i].c;
             }
             // respondo ACK
             Mensagem resposta(0, 0b01, 0b10, 0b1000, dado_nova_linha.corpo.sequencia, NULL);
-            *sequencia = ((*sequencia + 1) & 0x0F);
-            std::cout << "\n\n\tresposta:\n";
-            resposta.printMensagemString();
             if (resposta.enviaMensagem(soquete) < 20)
                 return -1;
-            else
+            else{
+                *sequencia = ((*sequencia + 1) & 0x0F);
                 dado_nova_linha = resposta.recebeResposta(soquete);
+            }
         } else { // mensagem mal formada ou fora de sequência
             Mensagem resposta(0, 0b01, 0b10, 0b1001, dado_nova_linha.corpo.sequencia, NULL); // NACK
             if (resposta.enviaMensagem(soquete) < 20)
@@ -213,9 +212,27 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
                 dado_nova_linha = resposta.recebeResposta(soquete);
         }
     }
-    std::cout << novo_texto;
+    if (dado_nova_linha.corpo.sequencia == *sequencia && dado_nova_linha.verificaParidade() && dado_nova_linha.corpo.tipo == 0b1101){
+            // respondo ACK
+        Mensagem resposta(0, 0b01, 0b10, 0b1000, dado_nova_linha.corpo.sequencia, NULL);
+        if (resposta.enviaMensagem(soquete) < 20)
+            return -1;
+        else
+            *sequencia = ((*sequencia + 1) & 0x0F);
+    }
 
-    arquivo.close();
+    // copia o resto do arquivo
+    while (!arquivo.eof()){
+        std::string aux;
+        std::getline (arquivo, aux);
+        conteudo_arquivo = conteudo_arquivo + aux + "\n";
+    }
+    arquivo.close(); // fecho o arquivo 
+    conteudo_arquivo.replace(conteudo_arquivo.find(linha_troca), linha_troca.length(), novo_texto);
+    std::ofstream escrita_arquivo(nome_arquivo); // o abro pra escrita
+    escrita_arquivo << conteudo_arquivo;
+    escrita_arquivo.close(); // fecho o arquivo 
+    
     return 1;
     
 }

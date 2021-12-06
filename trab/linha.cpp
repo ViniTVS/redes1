@@ -66,7 +66,7 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
         messageError(dados_linha_num);
         *sequencia = ((*sequencia + 1) & 0x0F);
         return 0;
-    } else if (dados_linha_num.corpo.tipo != 0b1100 || !dados_linha_num.verificaParidade()){
+    } else if ((dados_linha_num.corpo.tipo != 0b1100 && dados_linha_num.corpo.tipo != 0b1101) || !dados_linha_num.verificaParidade()){
         return -1;
     }
     
@@ -136,7 +136,7 @@ int respostaLinha(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         if (arquivo.eof()){
             arquivo.close();
             uint8_t array_dados[] = {4};
-            Mensagem erro_linha(1, 0b10, 0b01, 0b1111, *sequencia, array_dados); // erro 4
+            Mensagem erro_linha(1, 0b10, 0b01, 0b1101, *sequencia, array_dados); // erro 4
             if (erro_linha.enviaMensagem(soquete) == 20){
                 *sequencia = ((*sequencia + 1) & 0x0F);
                 return 0;
