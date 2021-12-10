@@ -1,8 +1,12 @@
-editor: rawsockets.o main.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o
-	g++ -o editor main.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o
+editor: rawsockets.o main_client.o main_server.o list.o mensagem.o directory.o error.o ver.o linha.o linhas.o edit.o
+	g++ -o client main_client.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o linhas.o
+	g++ -o server main_server.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o linhas.o
 
-main.o: main.cpp rawsockets.o
-	g++ -c -o main.o main.cpp
+main_client.o: main_client.cpp rawsockets.o
+	g++ -c -o main_client.o main_client.cpp
+
+main_server.o: main_server.cpp rawsockets.o
+	g++ -c -o main_server.o main_server.cpp
 
 mensagem.o: mensagem.cpp mensagem.h
 	g++ -c -o mensagem.o mensagem.cpp
@@ -22,6 +26,9 @@ ver.o: ver.cpp ver.h
 linha.o: linha.cpp linha.h
 	g++ -c -o linha.o linha.cpp
 
+linhas.o: linhas.cpp linhas.h
+	g++ -c -o linhas.o linhas.cpp
+
 edit.o: edit.cpp edit.h
 	g++ -c -o edit.o edit.cpp
 
@@ -29,5 +36,5 @@ rawsockets.o: rawsockets.c rawsockets.h
 	gcc -c -o rawsockets.o rawsockets.c
 
 clean:
-	rm -rf *.o editor 
+	rm -rf *.o server client
 	clear

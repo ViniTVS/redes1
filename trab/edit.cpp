@@ -74,7 +74,6 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
 
     // *---------------------------- envio o conteúdo da linha --------------------------------- 
     int len = 0;
-    std::cout << novo_texto.length();
     while( len < novo_texto.length()){
         int tam_envio = 0;
         for(; len < novo_texto.length() && tam_envio < 15; tam_envio++){
@@ -164,9 +163,15 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         return -1;
     uint8_t linha = mensagem_linha.dados[0].num;
     std::string conteudo_arquivo;
+    // mantenho uma variavel p/ armazenar o conteúdo da linha a see substiuída
     std::string linha_troca;
+    bool nova_linha = false;
     for (int i = 0; i <  unsigned(linha) ; i++){
         if (arquivo.eof()){            
+            if (i == unsigned(linha) - 1){
+                nova_linha = true;    
+                break;
+            }
             arquivo.close();
             uint8_t array_dados[] = {4};
             Mensagem erro_linha(1, 0b10, 0b01, 0b1111, *sequencia, array_dados); // erro 4
@@ -179,6 +184,13 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         std::getline (arquivo, linha_troca);
         conteudo_arquivo = conteudo_arquivo + linha_troca + "\n";
     }
+    // copia o resto do arquivo
+    while (!arquivo.eof()){
+        std::string aux;
+        std::getline (arquivo, aux);
+        conteudo_arquivo = conteudo_arquivo + aux + "\n";
+    }
+    arquivo.close(); // fecho o arquivo 
     Mensagem ack(0, 0b01, 0b10, 0b1000, *sequencia, NULL); // ACK
     if (ack.enviaMensagem(soquete) != 20)
         return -1;
@@ -220,15 +232,12 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         else
             *sequencia = ((*sequencia + 1) & 0x0F);
     }
-
-    // copia o resto do arquivo
-    while (!arquivo.eof()){
-        std::string aux;
-        std::getline (arquivo, aux);
-        conteudo_arquivo = conteudo_arquivo + aux + "\n";
+    if (nova_linha)
+        conteudo_arquivo += novo_texto;
+    else {
+        conteudo_arquivo.replace(conteudo_arquivo.find(linha_troca), linha_troca.length(), novo_texto);
+        conteudo_arquivo = conteudo_arquivo.substr(0, conteudo_arquivo.length() - 1); // retiro o \n desnecessário
     }
-    arquivo.close(); // fecho o arquivo 
-    conteudo_arquivo.replace(conteudo_arquivo.find(linha_troca), linha_troca.length(), novo_texto);
     std::ofstream escrita_arquivo(nome_arquivo); // o abro pra escrita
     escrita_arquivo << conteudo_arquivo;
     escrita_arquivo.close(); // fecho o arquivo 

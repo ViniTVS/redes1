@@ -1,7 +1,7 @@
-#include "linha.h"
+#include "linhas.h"
 
-int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_arquivo){
-    // cria mensagem contendo o número da linha
+int pedidoLinhas(uint8_t* sequencia, int soquete, uint8_t linha_inical, uint8_t linha_final, std::string nome_arquivo){
+    // cria mensagem contendo o número da linha_inical
     uint8_t array_dados[20];
     if (nome_arquivo.length() > 15)
         return -1;
@@ -9,7 +9,7 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
         array_dados[i] = nome_arquivo[i];
     }
     // *------------------------- envio do nome do arquivo --------------------------------- 
-    Mensagem msg_linha(nome_arquivo.length(), 0b01, 0b10, 0b0011, *sequencia, array_dados); // pedido do comando
+    Mensagem msg_linha(nome_arquivo.length(), 0b01, 0b10, 0b0100, *sequencia, array_dados); // pedido do comando
     // falha no envio da mensagem
     if (msg_linha.enviaMensagem(soquete) < 20)
         return -1;
@@ -39,10 +39,11 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
     else // qualquer outra coisa...
         return -1;
 
-    // *---------------------------- envio do número da linha --------------------------------- 
+    // *---------------------------- envio do número de linhas --------------------------------- 
 
-    array_dados[0] = linha;
-    Mensagem msg_linha_num(1, 0b01, 0b10, 0b1010, *sequencia, array_dados); // envio do número da linha
+    array_dados[0] = linha_inical;
+    array_dados[1] = linha_final;
+    Mensagem msg_linha_num(2, 0b01, 0b10, 0b1010, *sequencia, array_dados); // envio do número da linha_inical
 
     if (msg_linha_num.enviaMensagem(soquete) < 20)
         return -1; //give up
@@ -73,7 +74,7 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
     std::string saida_linha = "";
     *sequencia = ((*sequencia + 1) & 0x0F);
 
-    // *------------------------- leitura da linha do arquivo --------------------------------- 
+    // *------------------------- leitura da linha_inical do arquivo --------------------------------- 
     while(dados_linha_num.corpo.tipo == 0b1100 && dados_linha_num.corpo.tamanho != 0){
         // verifico se a mensagem está na ordem esperada e sua paridade
         if (dados_linha_num.corpo.sequencia == *sequencia && dados_linha_num.verificaParidade()){ 
@@ -104,7 +105,7 @@ int pedidoLinha(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome
 }
 
 
-int respostaLinha(uint8_t* sequencia, int soquete, Mensagem msg_linha){
+int respostaLinhas(uint8_t* sequencia, int soquete, Mensagem msg_linha){
     // *------------------------- leio o nome do arquivo --------------------------------- 
     std::string nome_arquivo = "";
 
@@ -127,12 +128,14 @@ int respostaLinha(uint8_t* sequencia, int soquete, Mensagem msg_linha){
     if (resposta_ACK.enviaMensagem(soquete) == 20)
         *sequencia = ((*sequencia + 1) & 0x0F);
 
-    // *---------------------------- leio o número da linha --------------------------------- 
+    // *---------------------------- leio o número das linhas --------------------------------- 
     Mensagem mensagem_linha = resposta_ACK.recebeResposta(soquete);
     if (mensagem_linha.isEqual(resposta_ACK) || mensagem_linha.corpo.tipo != 0b1010)
         return -1;
-    uint8_t linha = mensagem_linha.dados[0].num;
-    for (int i = 0; i < linha ; i++){
+    uint8_t linha_inical = mensagem_linha.dados[0].num;
+    uint8_t linha_final = mensagem_linha.dados[1].num;
+    int i = 0;
+    for (; i < unsigned(linha_inical) ; i++){
         if (arquivo.eof()){
             arquivo.close();
             uint8_t array_dados[] = {4};
@@ -145,12 +148,18 @@ int respostaLinha(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         }
         std::getline (arquivo, conteudo_arquivo);
     }
-    arquivo.close();
     conteudo_arquivo += "\n";
+    while(!arquivo.eof() & i < unsigned(linha_final)){
+        std::string aux;
+        std::getline (arquivo, aux);
+        conteudo_arquivo +=  aux + "\n";
+        i++;
+    }
+    arquivo.close();
     
     int len = 0;
     uint8_t array_dados[20];
-    // *---------------------------- envio o conteúdo da linha --------------------------------- 
+    // *---------------------------- envio o conteúdo das linhas --------------------------------- 
     while( len < conteudo_arquivo.length()){
         int tam_envio = 0;
         for(; tam_envio < conteudo_arquivo.length() - len && tam_envio < 15; tam_envio++){
