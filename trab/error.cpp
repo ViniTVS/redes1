@@ -26,6 +26,3 @@ void messageError(Mensagem error_msg){
     // if (m != NULL){}
 }
 
-void handleError(int error){
-
-}

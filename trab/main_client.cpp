@@ -12,6 +12,7 @@
 #include "edit.h"
 #include "linha.h"
 #include "linhas.h"
+#include "compilar.h"
 
 extern "C" {
   #include "rawsockets.h" 
@@ -88,7 +89,7 @@ int main(){
             pedidoEdit(&sequencia, soquete, linha, nome_arq, novo_texto);
         }
         else if (comando == "compilar" || comando == "Compilar"){
-
+            compila(entrada.substr(9, entrada.length()));
         }
         else if (comando == "sair" || comando == "exit"){
             return 0;

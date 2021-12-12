@@ -9,23 +9,23 @@ int pedidoLinhas(uint8_t* sequencia, int soquete, uint8_t linha_inical, uint8_t 
         array_dados[i] = nome_arquivo[i];
     }
     // *------------------------- envio do nome do arquivo --------------------------------- 
-    Mensagem msg_linha(nome_arquivo.length(), 0b01, 0b10, 0b0100, *sequencia, array_dados); // pedido do comando
+    Mensagem msg_linhas(nome_arquivo.length(), 0b01, 0b10, 0b0100, *sequencia, array_dados); // pedido do comando
     // falha no envio da mensagem
-    if (msg_linha.enviaMensagem(soquete) < 20)
+    if (msg_linhas.enviaMensagem(soquete) < 20)
         return -1;
 
-    Mensagem dados_linha = msg_linha.recebeResposta(soquete);
+    Mensagem dados_linha = msg_linhas.recebeResposta(soquete);
     // verifica se foi timeout
-    if (dados_linha.isEqual(msg_linha)){
+    if (dados_linha.isEqual(msg_linhas)){
         return -1;
     }
     // tenta re-enviar a mensagem em caso de erro
     if (dados_linha.corpo.tipo == 0b1001 || !dados_linha.verificaParidade()){
-        if (msg_linha.enviaMensagem(soquete) < 20)
+        if (msg_linhas.enviaMensagem(soquete) < 20)
             return -1; //give up
-        Mensagem dados_linha = msg_linha.recebeResposta(soquete);
+        Mensagem dados_linha = msg_linhas.recebeResposta(soquete);
         // verifica se foi timeout
-        if (dados_linha.isEqual(msg_linha)){
+        if (dados_linha.isEqual(msg_linhas)){
             return -1; //give up
         }
     }
@@ -55,11 +55,11 @@ int pedidoLinhas(uint8_t* sequencia, int soquete, uint8_t linha_inical, uint8_t 
     
     // tenta re-enviar a mensagem em caso de erro
     if (dados_linha_num.corpo.tipo == 0b1001 || !dados_linha_num.verificaParidade()){
-        if (msg_linha.enviaMensagem(soquete) < 20)
+        if (msg_linhas.enviaMensagem(soquete) < 20)
             return -1; //give up
-        Mensagem dados_linha_num = msg_linha.recebeResposta(soquete);
+        Mensagem dados_linha_num = msg_linhas.recebeResposta(soquete);
         // verifica se foi timeout
-        if (dados_linha_num.isEqual(msg_linha)){
+        if (dados_linha_num.isEqual(msg_linhas)){
             return -1; //give up
         }
     }
@@ -105,12 +105,12 @@ int pedidoLinhas(uint8_t* sequencia, int soquete, uint8_t linha_inical, uint8_t 
 }
 
 
-int respostaLinhas(uint8_t* sequencia, int soquete, Mensagem msg_linha){
+int respostaLinhas(uint8_t* sequencia, int soquete, Mensagem msg_linhas){
     // *------------------------- leio o nome do arquivo --------------------------------- 
     std::string nome_arquivo = "";
 
-    for (int i = 0; i < msg_linha.corpo.tamanho; i++)
-        nome_arquivo += msg_linha.dados[i].c;
+    for (int i = 0; i < msg_linhas.corpo.tamanho; i++)
+        nome_arquivo += msg_linhas.dados[i].c;
         
     std::fstream arquivo; 
     std::string conteudo_arquivo;
@@ -195,7 +195,7 @@ int respostaLinhas(uint8_t* sequencia, int soquete, Mensagem msg_linha){
         }
     }
 
-    // final de envio
+    // *---------------------------- fim de envio --------------------------------- 
     *sequencia = ((*sequencia + 1) & 0x0F);
     Mensagem mensagem(0, 0b10, 0b01, 0b1101, *sequencia, NULL);
     if (mensagem.enviaMensagem(soquete) < 20)

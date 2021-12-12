@@ -79,8 +79,6 @@ class Mensagem{
      */
     Mensagem(uint8_t tamanho_in, uint8_t origem_in, uint8_t destino_in, uint8_t tipo_in, uint8_t sequencia_in, uint8_t *array_dados);
 
-    void printMensagem();
-    void printMensagemString();
     /**
      * @brief Envia a mensagem utilizando a função send da socket.h via <soquete>.
      * O método adapta o objeto do tipo Mensagem para um array de 20 inteiros de 8 bits sem sinal. Os Bytes iniciais sendo

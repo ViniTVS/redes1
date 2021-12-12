@@ -9,23 +9,23 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
         array_dados[i] = nome_arquivo[i];
     }
     // *------------------------- envio do nome do arquivo --------------------------------- 
-    Mensagem msg_linha(nome_arquivo.length(), 0b01, 0b10, 0b0101, *sequencia, array_dados); // pedido do comando
+    Mensagem msg_edit(nome_arquivo.length(), 0b01, 0b10, 0b0101, *sequencia, array_dados); // pedido do comando
     // falha no envio da mensagem
-    if (msg_linha.enviaMensagem(soquete) < 20)
+    if (msg_edit.enviaMensagem(soquete) < 20)
         return -1;
 
-    Mensagem dados_linha = msg_linha.recebeResposta(soquete);
+    Mensagem dados_linha = msg_edit.recebeResposta(soquete);
     // verifica se foi timeout
-    if (dados_linha.isEqual(msg_linha)){
+    if (dados_linha.isEqual(msg_edit)){
         return -1;
     }
     // tenta re-enviar a mensagem em caso de erro
     if (dados_linha.corpo.tipo == 0b1001 || !dados_linha.verificaParidade()){
-        if (msg_linha.enviaMensagem(soquete) < 20)
+        if (msg_edit.enviaMensagem(soquete) < 20)
             return -1; //give up
-        Mensagem dados_linha = msg_linha.recebeResposta(soquete);
+        Mensagem dados_linha = msg_edit.recebeResposta(soquete);
         // verifica se foi timeout
-        if (dados_linha.isEqual(msg_linha)){
+        if (dados_linha.isEqual(msg_edit)){
             return -1; //give up
         }
     }
@@ -42,23 +42,23 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
     // *---------------------------- envio do número da linha --------------------------------- 
 
     array_dados[0] = linha;
-    Mensagem msg_linha_num(1, 0b01, 0b10, 0b1010, *sequencia, array_dados); // envio do número da linha
+    Mensagem msg_edit_num(1, 0b01, 0b10, 0b1010, *sequencia, array_dados); // envio do número da linha
 
-    if (msg_linha_num.enviaMensagem(soquete) < 20)
+    if (msg_edit_num.enviaMensagem(soquete) < 20)
         return -1; //give up
     
-    Mensagem resp_linha = msg_linha_num.recebeResposta(soquete);
+    Mensagem resp_linha = msg_edit_num.recebeResposta(soquete);
     // verifica se foi timeout
-    if (resp_linha.isEqual(msg_linha_num))
+    if (resp_linha.isEqual(msg_edit_num))
         return -1;
     
     // tenta re-enviar a mensagem em caso de erro
     if (resp_linha.corpo.tipo == 0b1001 || !resp_linha.verificaParidade()){
-        if (msg_linha.enviaMensagem(soquete) < 20)
+        if (msg_edit.enviaMensagem(soquete) < 20)
             return -1; //give up
-        Mensagem resp_linha = msg_linha.recebeResposta(soquete);
+        Mensagem resp_linha = msg_edit.recebeResposta(soquete);
         // verifica se foi timeout
-        if (resp_linha.isEqual(msg_linha)){
+        if (resp_linha.isEqual(msg_edit)){
             return -1; //give up
         }
     }
@@ -131,12 +131,12 @@ int pedidoEdit(uint8_t* sequencia, int soquete, uint8_t linha, std::string nome_
 }
 
 
-int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
+int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_edit){
     // *------------------------- leio o nome do arquivo --------------------------------- 
     std::string nome_arquivo = "";
 
-    for (int i = 0; i < msg_linha.corpo.tamanho; i++)
-        nome_arquivo += msg_linha.dados[i].c;
+    for (int i = 0; i < msg_edit.corpo.tamanho; i++)
+        nome_arquivo += msg_edit.dados[i].c;
         
     std::fstream arquivo;
     arquivo.open(nome_arquivo, std::ios::in); 
@@ -164,11 +164,13 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
     uint8_t linha = mensagem_linha.dados[0].num;
     std::string conteudo_arquivo;
     // mantenho uma variavel p/ armazenar o conteúdo da linha a see substiuída
-    std::string linha_troca;
+
+    std::string resto_arquivo = "\n";
+    std::string aux;
     bool nova_linha = false;
-    for (int i = 0; i <  unsigned(linha) ; i++){
+    for (int i = 0; i <  (linha - 1) ; i++){
         if (arquivo.eof()){            
-            if (i == unsigned(linha) - 1){
+            if (i == (linha - 2)){
                 nova_linha = true;    
                 break;
             }
@@ -181,14 +183,14 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
             }
             return -1; // erro no envio
         }
-        std::getline (arquivo, linha_troca);
-        conteudo_arquivo = conteudo_arquivo + linha_troca + "\n";
+        std::getline (arquivo, aux);
+        conteudo_arquivo =  conteudo_arquivo + aux + "\n";
     }
+    std::getline (arquivo, aux);
     // copia o resto do arquivo
     while (!arquivo.eof()){
-        std::string aux;
         std::getline (arquivo, aux);
-        conteudo_arquivo = conteudo_arquivo + aux + "\n";
+        resto_arquivo = resto_arquivo + aux + "\n";
     }
     arquivo.close(); // fecho o arquivo 
     Mensagem ack(0, 0b01, 0b10, 0b1000, *sequencia, NULL); // ACK
@@ -233,11 +235,12 @@ int respostaEdit(uint8_t* sequencia, int soquete, Mensagem msg_linha){
             *sequencia = ((*sequencia + 1) & 0x0F);
     }
     if (nova_linha)
-        conteudo_arquivo += novo_texto;
+        conteudo_arquivo += novo_texto + "\n";
     else {
-        conteudo_arquivo.replace(conteudo_arquivo.find(linha_troca), linha_troca.length(), novo_texto);
-        conteudo_arquivo = conteudo_arquivo.substr(0, conteudo_arquivo.length() - 1); // retiro o \n desnecessário
+        // conteudo_arquivo.replace(conteudo_arquivo.find(linha_troca), linha_troca.length(), novo_texto);
+        conteudo_arquivo = conteudo_arquivo + novo_texto + resto_arquivo.substr(0, resto_arquivo.length() - 1); // retiro o \n desnecessário
     }
+
     std::ofstream escrita_arquivo(nome_arquivo); // o abro pra escrita
     escrita_arquivo << conteudo_arquivo;
     escrita_arquivo.close(); // fecho o arquivo 
