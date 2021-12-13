@@ -23,7 +23,7 @@ int main(){
     uint8_t sequencia = 0;
     
     struct timeval tv;
-    tv.tv_sec = 60*5;
+    tv.tv_sec = 60*20;
     tv.tv_usec = 0;
     int timeout;
     

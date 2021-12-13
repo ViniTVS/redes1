@@ -12,7 +12,7 @@
 #include "edit.h"
 #include "linha.h"
 #include "linhas.h"
-#include "compilar.h"
+// #include "compilar.h"
 
 extern "C" {
   #include "rawsockets.h" 
@@ -30,72 +30,106 @@ int main(){
         std::getline(std::cin, entrada);
         std::cout << "\033[2J\033[1;1H";
         std::string comando = entrada.substr(0, entrada.find(" ")); // separa o comando
-
+        int resposta;
         if (comando == "cd"){
             std::string nome_dir = entrada.substr(3, entrada.length());
-            pedidoCd(&sequencia, soquete, nome_dir);
+            resposta = pedidoCd(&sequencia, soquete, nome_dir);
+            if (resposta == -1)
+                std::cout << "Ocorreu um erro de comunicação\n";                    
+            
         }
         else if (comando == "lcd"){
             std::string nome_dir = entrada.substr(4, entrada.length());
-            trocaDir(nome_dir);
+            resposta = trocaDir(nome_dir);
+            if (resposta == -1)
+                std::cout << "Ocorreu um erro no acesso do diretório\n";     
+            if (resposta == 0)
+                std::cout << "O diretório informado não existe\n";                    
+            
         }
         else if (comando == "ls"){
-            int resposta = pedidoLs(&sequencia, soquete);
-            if (resposta != 1){
-                if (resposta == 0 )
-                    std::cout << "Server timeout\n";
-                else
-                    std::cout << "Erro no soquete\n";                    
-            }
+            resposta = pedidoLs(&sequencia, soquete);
+            if (resposta == -1)
+                std::cout << "Ocorreu um erro de comunicação\n";                    
+            
         }
         else if (comando == "lls"){
             std::cout << ls();
+            if (resposta == -1)
+                std::cout << "Ocorreu um erro de comunicação\n";                    
+            
         }
         else if (comando == "ver"){
             std::string nome_arq = entrada.substr(4, entrada.length());
-            pedidoVer(&sequencia, soquete, nome_arq);
+            resposta = pedidoVer(&sequencia, soquete, nome_arq);
+            if (resposta == -1)
+                std::cout << "Ocorreu um erro de comunicação\n";                    
+            
         }
         else if (comando == "linha"){
-            std::string resto_entrada = entrada.substr(6, entrada.length());
-            uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+            try{
+                std::string resto_entrada = entrada.substr(6, entrada.length());
+                uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
 
-            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
-            std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
+                resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+                std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
 
-            pedidoLinha(&sequencia, soquete, linha, nome_arq);
+                resposta = pedidoLinha(&sequencia, soquete, linha, nome_arq);
+                if (resposta == -1)
+                    std::cout << "Ocorreu um erro de comunicação\n";                    
+            
+            }
+            catch(...){
+                std::cout << "Erro na formatação do comando";
+            }
         }
         else if (comando == "linhas"){
-            std::string resto_entrada = entrada.substr(7, entrada.length());
-            uint8_t linha_inicial = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+            try{
+                std::string resto_entrada = entrada.substr(7, entrada.length());
+                uint8_t linha_inicial = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+                
+                resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+                uint8_t linha_final = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+
+                resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+                std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
+                resposta = pedidoLinhas(&sequencia, soquete, linha_inicial, linha_final, nome_arq);
+                if (resposta == -1)
+                    std::cout << "Ocorreu um erro de comunicação\n";                    
             
-            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
-            uint8_t linha_final = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
-
-            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
-            std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
-            pedidoLinhas(&sequencia, soquete, linha_inicial, linha_final, nome_arq);
-
+            }
+            catch(...){
+                std::cout << "Erro na formatação do comando";
+            }
         }
         else if (comando == "edit"){
-            std::string resto_entrada = entrada.substr(5, entrada.length());
-            uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
+            try {
+                std::string resto_entrada = entrada.substr(5, entrada.length());
+                uint8_t linha = std::stoi( resto_entrada.substr(0, resto_entrada.find(" ")));
 
-            resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
-            std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
+                resto_entrada = resto_entrada.substr(resto_entrada.find(" ") + 1, resto_entrada.length());
+                std::string nome_arq = resto_entrada.substr(0, resto_entrada.find(" "));
 
-            resto_entrada = resto_entrada.substr(resto_entrada.find("\"") + 1, resto_entrada.length());
-            std::string novo_texto = resto_entrada.substr(0, resto_entrada.find("\""));
+                resto_entrada = resto_entrada.substr(resto_entrada.find("\"") + 1, resto_entrada.length());
+                std::string novo_texto = resto_entrada.substr(0, resto_entrada.find("\""));
 
-            pedidoEdit(&sequencia, soquete, linha, nome_arq, novo_texto);
+                resposta = pedidoEdit(&sequencia, soquete, linha, nome_arq, novo_texto);
+                if (resposta == -1)
+                    std::cout << "Ocorreu um erro de comunicação\n";                    
+            
+            }
+            catch(...){
+                std::cout << "Erro na formatação do comando";
+            }
         }
         else if (comando == "compilar" || comando == "Compilar"){
-            compila(entrada.substr(9, entrada.length()));
+            // compila(entrada.substr(9, entrada.length()));
         }
         else if (comando == "sair" || comando == "exit"){
             return 0;
         }
         else { // nenhum comando conhecido
-            std::cout << "ERRO: Comando não reconhecido\n";
+            std::cout << "Comando não reconhecido\n";
         }
         std::cout << "\n>";
     }

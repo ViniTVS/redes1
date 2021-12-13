@@ -1,5 +1,5 @@
-editor: rawsockets.o main_client.o main_server.o list.o mensagem.o directory.o error.o ver.o linha.o linhas.o edit.o compilar.o
-	g++ -o client main_client.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o linhas.o compilar.o
+editor: rawsockets.o main_client.o main_server.o list.o mensagem.o directory.o error.o ver.o linha.o linhas.o edit.o 
+	g++ -o client main_client.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o linhas.o
 	g++ -o server main_server.o rawsockets.o list.o mensagem.o directory.o error.o ver.o linha.o edit.o linhas.o
 
 main_client.o: main_client.cpp rawsockets.o
@@ -31,9 +31,6 @@ linhas.o: linhas.cpp linhas.h
 
 edit.o: edit.cpp edit.h
 	g++ -c -o edit.o edit.cpp
-
-compilar.o: compilar.cpp compilar.h
-	g++ -c -o compilar.o compilar.cpp
 
 rawsockets.o: rawsockets.c rawsockets.h
 	gcc -c -o rawsockets.o rawsockets.c

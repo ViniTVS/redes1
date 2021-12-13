@@ -129,7 +129,7 @@ int pedidoVer(uint8_t* sequencia, int soquete, std::string nome_arquivo){
         *sequencia = ((*sequencia + 1) & 0x0F);
         return 0;
     } 
-    // enquanto tenho mensagem pra ler 
+    //* ------------------------ enquanto tenho mensagem pra ler --------------------------------------
     *sequencia = ((*sequencia + 1) & 0x0F);
     while(dados_linha.corpo.tipo == 0b1100){
         // verifico se a mensagem está na ordem esperada e sua paridade
